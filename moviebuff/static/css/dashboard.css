@@ -1,0 +1,35 @@
+.movie-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.movie-item {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    width: 200px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.movie-poster {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.movie-details {
+    padding: 10px;
+    text-align: center;
+}
+
+.movie-details a {
+    font-size: 1.2em;
+    color: #333;
+    text-decoration: none;
+}
+
+.movie-details p {
+    font-size: 1em;
+    color: #777;
+}

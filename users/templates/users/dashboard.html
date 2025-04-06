@@ -1,28 +1,33 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dashboard</title>
-</head>
-<body>
-    <h1>Bienvenue, {{ user.username }} !</h1>
-    <p>Voici votre tableau de bord personnel.</p>
+{% extends 'moviebuff/base.html' %}
 
-    <h2>Watched Movies</h2>
-    <ul>
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ user.username }} !</h1>
+
+<h2>Watched Movies</h2>
+<div class="movie-list">
     {% for movie in watched_movies %}
-        <li>
-            <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a> ({{ movie.movie.release_date }})
-        </li>
+        <div class="movie-item">
+            <img src="{{ movie.movie.tmdb_poster_path }}" alt="{{ movie.movie.title }}" class="movie-poster">
+            <div class="movie-details">
+                <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a>
+                <p>{{ movie.movie.release_date }}</p>
+            </div>
+        </div>
     {% endfor %}
-    </ul>
+</div>
 
-    <h2>Watchlist</h2>
-    <ul>
+<h2>Watchlist</h2>
+<div class="movie-list">
     {% for movie in watchlist_movies %}
-        <li>
-            <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a> ({{ movie.movie.release_date }})
-        </li>
+        <div class="movie-item">
+            <img src="{{ movie.movie.tmdb_poster_path }}" alt="{{ movie.movie.title }}" class="movie-poster">
+            <div class="movie-details">
+                <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a>
+                <p>{{ movie.movie.release_date }}</p>
+            </div>
+        </div>
     {% endfor %}
-    </ul>
-</body>
-</html>
+</div>
+{% endblock %}

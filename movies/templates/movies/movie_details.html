@@ -1,15 +1,21 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ movie.title }}</title>
-</head>
-<body>
+{% extends 'moviebuff/base.html' %}
+
+{% block title %}{{ movie.title }}{% endblock %}
+
+{% block content %}
     <h1>{{ movie.title }}</h1>
     <p><strong>Overview:</strong> {{ movie.overview }}</p>
     <p><strong>Release Date:</strong> {{ movie.release_date }}</p>
-    <!-- Ajoutez d'autres détails pertinents ici -->
+    <!-- Add other relevant details here -->
 
     {% if is_watched %}
+        <p><strong>Watched Date:</strong> {{ watched_entry.watched_date }}</p>
+        {% if watched_entry.rating is not None %}
+            <p><strong>Rating:</strong> {{ watched_entry.rating }}/5</p>
+        {% endif %}
+        {% if watched_entry.review %}
+            <p><strong>Review:</strong> {{ watched_entry.review }}</p>
+        {% endif %}
         <a href="{% url 'remove_from_watched' movie.id %}">Remove from Watched</a>
     {% else %}
         <a href="{% url 'add_to_watched' movie.id %}">Add to Watched</a>
@@ -20,5 +26,4 @@
     {% else %}
         <a href="{% url 'add_to_watchlist' movie.id %}">Add to Watchlist</a>
     {% endif %}
-</body>
-</html>
+{% endblock %}

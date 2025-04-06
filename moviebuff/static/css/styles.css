@@ -1,0 +1,13 @@
+/* Import des composants CSS */
+@import url('header.css');
+@import url('footer.css');
+@import url('nav.css');
+@import url('dashboard.css');
+
+/* Styles globaux */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}

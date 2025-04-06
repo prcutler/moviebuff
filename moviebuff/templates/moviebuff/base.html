@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Website{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {% load i18n %}
+</head>
+<body>
+    <header>
+        {% include 'moviebuff/components/header.html' %}
+    </header>
+    <nav>
+        {% include 'moviebuff/components/nav.html' %}
+    </nav>
+    <main>
+        {% block content %}
+        <!-- Le contenu spécifique à chaque page sera inséré ici -->
+        {% endblock %}
+    </main>
+    <footer>
+        {% include 'moviebuff/components/footer.html' %}
+    </footer>
+</body>
+</html>

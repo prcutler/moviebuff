@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,10 +23,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-l8=$d^y#o$d$lw)qmgiaww&qw&y5kwiv&d$0!f%!j2+9*++put'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['moviebuff.retiolus.net']
+ALLOWED_HOSTS = ['moviebuff.retiolus.net', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://moviebuff.retiolus.net']
+
+USE_I18N = True
+USE_L10N = True
+
+LANGUAGE_CODE = 'en-us'  # Default language
+
+LANGUAGES = [
+    ('en', _('English')),
+    ('fr', _('French')),
+    # Add more languages as needed
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
 
 # Application definition
 
@@ -49,14 +65,20 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
 ]
 
 ROOT_URLCONF = 'moviebuff.urls'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'moviebuff/static',
+]
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
+            BASE_DIR / 'moviebuff/templates',
             BASE_DIR / 'users/templates',  # Make sure this is included
         ],
         'APP_DIRS': True,
