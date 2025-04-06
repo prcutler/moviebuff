@@ -82,14 +82,25 @@ def webfinger(request):
         "subject": f"acct:{username}@{request.get_host()}",
         "aliases": [
             actor.get_absolute_url(),
+            f"https://{request.get_host()}/users/{username}"
         ],
         "links": [
+            {
+                "rel": "http://webfinger.net/rel/profile-page",
+                "type": "text/html",
+                "href": f"https://{request.get_host()}/users/{username}"
+            },
             {
                 "rel": "self",
                 "type": "application/activity+json",
                 "href": actor.get_absolute_url()
+            },
+            {
+                "rel": "http://ostatus.org/schema/1.0/subscribe",
+                "template": f"https://{request.get_host()}/authorize_interaction?uri={{uri}}"
             }
         ]
     }
 
+    print(webfinger_response)  # Pour le débogage
     return JsonResponse(webfinger_response)
