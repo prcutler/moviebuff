@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home</title>
+</head>
+<body>
+    <h1>Bienvenue sur MovieBuff !</h1>
+    {% if user.is_authenticated %}
+        <p>Bonjour, {{ user.username }} ! Accédez à votre <a href="{% url 'dashboard' %}">tableau de bord</a>.</p>
+    {% else %}
+        <p>Veuillez vous <a href="{% url 'login' %}">connecter</a> ou <a href="{% url 'register' %}">créer un compte</a>.</p>
+    {% endif %}
+</body>
+</html>

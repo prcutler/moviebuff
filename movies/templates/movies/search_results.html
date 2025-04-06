@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Results</title>
+</head>
+<body>
+    <h1>Search Results</h1>
+    <form method="get" action="{% url 'search_movies' %}">
+        <input type="text" name="q" placeholder="Search for a movie..." value="{{ query }}">
+        <button type="submit">Search</button>
+    </form>
+    {% if page_obj %}
+        <ul>
+        {% for movie in page_obj %}
+            <li>
+                <a href="{% url 'handle_movie_redirect' movie.id %}">{{ movie.title }}</a> ({{ movie.release_date }})
+            </li>
+        {% endfor %}
+        </ul>
+
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1&q={{ query }}">&laquo; first</a>
+                    <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&q={{ query }}">next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
+</body>
+</html>

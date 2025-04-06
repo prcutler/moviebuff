@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ movie.title }}</title>
+</head>
+<body>
+    <h1>{{ movie.title }}</h1>
+    <p><strong>Overview:</strong> {{ movie.overview }}</p>
+    <p><strong>Release Date:</strong> {{ movie.release_date }}</p>
+    <!-- Ajoutez d'autres détails pertinents ici -->
+
+    {% if is_watched %}
+        <a href="{% url 'remove_from_watched' movie.id %}">Remove from Watched</a>
+    {% else %}
+        <a href="{% url 'add_to_watched' movie.id %}">Add to Watched</a>
+    {% endif %}
+
+    {% if is_in_watchlist %}
+        <a href="{% url 'remove_from_watchlist' movie.id %}">Remove from Watchlist</a>
+    {% else %}
+        <a href="{% url 'add_to_watchlist' movie.id %}">Add to Watchlist</a>
+    {% endif %}
+</body>
+</html>
