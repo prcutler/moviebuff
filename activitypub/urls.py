@@ -7,5 +7,7 @@ urlpatterns = [
     path('users/<str:username>/unfollow/', views.unfollow_user, name='unfollow_user'),
     path('users/<str:username>/followers/', views.followers, name='followers'),
     path('users/<str:username>/following/', views.following, name='following'),
-    path('users/<str:username>/', views.actor_detail, name='actor_detail'), 
+    path('users/<str:username>/', views.actor_detail, name='actor_detail'),
+    path('users/<str:username>/inbox/', views.InboxView.as_view(), name='inbox'),
+    path('users/<str:username>/outbox/', views.InboxView.as_view(), name='outbox'),
 ]

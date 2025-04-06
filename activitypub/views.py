@@ -2,7 +2,21 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from .models import Follow, Actor
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+import json
 
+@method_decorator(csrf_exempt, name='dispatch')
+class InboxView(View):
+    def post(self, request, username):
+        try:
+            activity = json.loads(request.body)
+            # Traitez l'activité reçue ici
+            print(f"Received activity: {activity}")
+            return JsonResponse({"status": "success"}, status=200)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
 
 def actor_detail(request, username):
     actor = get_object_or_404(Actor, user__username=username)
