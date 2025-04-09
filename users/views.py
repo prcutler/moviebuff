@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .forms import RegisterForm
-from movies.models import Watched, Watchlist
+from movies.models import Watched, Watchlist, CustomWatchlist
 
 def home(request):
     return render(request, "users/home.html")
@@ -20,11 +20,14 @@ def register(request):
 
 @login_required
 def dashboard(request):
-    watched_movies = Watched.objects.filter(user=request.user)
-    watchlist_movies = Watchlist.objects.filter(user=request.user)
+    watched_movies = Watched.objects.filter(user=request.user).order_by('-watched_date')
+    watchlist_movies = Watchlist.objects.filter(user=request.user).order_by('-added_date')
+    custom_watchlists = CustomWatchlist.objects.filter(users=request.user).order_by('name')
+
     return render(request, 'users/dashboard.html', {
         'watched_movies': watched_movies,
-        'watchlist_movies': watchlist_movies
+        'watchlist_movies': watchlist_movies,
+        'custom_watchlists': custom_watchlists,
     })
 
 def user_profile(request, username):

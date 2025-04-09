@@ -3,6 +3,12 @@
 @import url('footer.css');
 @import url('nav.css');
 @import url('dashboard.css');
+@import url('movie_card.css');
+@import url('user_data.css');
+@import url('external_data.css');
+@import url('search_bar.css');
+@import url('pagination.css');
+@import url('form.css');
 
 /* Styles globaux */
 body {
@@ -10,4 +16,12 @@ body {
     margin: 0;
     padding: 0;
     line-height: 1.6;
+    background-color: #f4f4f9;
+}
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+    max-width: 1200px;
 }

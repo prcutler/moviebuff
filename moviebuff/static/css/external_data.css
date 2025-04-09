@@ -1,0 +1,18 @@
+/* moviebuff/static/css/external_data.css */
+.external-data {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+.external-data h3 {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    font-size: 20px;
+}
+
+.external-data p {
+    margin: 10px 0;
+}

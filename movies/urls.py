@@ -9,4 +9,9 @@ urlpatterns = [
     path('watchlist/remove/<int:movie_id>/', views.remove_from_watchlist, name='remove_from_watchlist'), 
     path('details/<int:movie_id>/', views.movie_details, name='movie_details'),
     path('search/tmdb/<int:tmdb_id>/', views.handle_tmdb_redirect, name='handle_movie_redirect'),
+    path('custom_watchlist/remove/<int:movie_id>/<int:watchlist_id>/', views.remove_from_custom_watchlist, name='remove_from_custom_watchlist'),
+    path('custom_watchlist/delete/<int:watchlist_id>/', views.delete_custom_watchlist, name='delete_custom_watchlist'),
+    path('watched/all/', views.view_all_watched, name='view_all_watched'),
+    path('watchlist/all/', views.view_all_watchlist, name='view_all_watchlist'),
+    path('custom_watchlist/<int:watchlist_id>/', views.view_custom_watchlist, name='view_custom_watchlist'),
 ]

@@ -1,0 +1,25 @@
+/* moviebuff/static/css/movie_card.css */
+.movie-card {
+    display: flex;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+.movie-card img {
+    width: 200px;
+    height: auto;
+    object-fit: cover;
+}
+
+.movie-card .movie-info {
+    padding: 20px;
+    flex: 1;
+}
+
+.movie-card .movie-info h2 {
+    margin-top: 0;
+    font-size: 24px;
+}

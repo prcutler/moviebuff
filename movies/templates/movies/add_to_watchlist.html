@@ -1,0 +1,19 @@
+{% extends 'moviebuff/base.html' %}
+{% load static %}
+
+{% block title %}Add to Watchlist{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'css/form.css' %}">
+
+    <div class="container">
+        <div class="form-container">
+            <h2>Add {{ movie.title }} to Watchlist</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

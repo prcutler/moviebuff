@@ -1,0 +1,17 @@
+/* moviebuff/static/css/user_data.css */
+.user-data {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+.user-data h3 {
+    margin-top: 0;
+    font-size: 20px;
+}
+
+.user-data p {
+    margin: 10px 0;
+}

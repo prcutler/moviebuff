@@ -3,31 +3,69 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1>Welcome, {{ user.username }} !</h1>
+<div class="container">
+    <h2>
+        <a href="{% url 'view_all_watchlist' %}">Watchlist</a>
+    </h2>
+    <div class="movie-list">
+        {% if watchlist_movies %}
+            {% for movie in watchlist_movies|slice:":5" %}
+                <div class="movie-item">
+                    <img src="{{ movie.movie.tmdb_poster_path }}" alt="{{ movie.movie.title }}" class="movie-poster">
+                    <div class="movie-details">
+                        <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a>
+                        <p>{{ movie.movie.release_date }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Nothing here, start by making a search!</p>
+        {% endif %}
+    </div>
 
-<h2>Watched Movies</h2>
-<div class="movie-list">
-    {% for movie in watched_movies %}
-        <div class="movie-item">
-            <img src="{{ movie.movie.tmdb_poster_path }}" alt="{{ movie.movie.title }}" class="movie-poster">
-            <div class="movie-details">
-                <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a>
-                <p>{{ movie.movie.release_date }}</p>
-            </div>
-        </div>
-    {% endfor %}
-</div>
+    <h2>
+        <a href="{% url 'view_all_watched' %}">Watched Movies</a>
+    </h2>
+    <div class="movie-list">
+        {% if watched_movies %}
+            {% for movie in watched_movies|slice:":5" %}
+                <div class="movie-item">
+                    <img src="{{ movie.movie.tmdb_poster_path }}" alt="{{ movie.movie.title }}" class="movie-poster">
+                    <div class="movie-details">
+                        <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a>
+                        <p>{{ movie.movie.release_date }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Nothing here, start by making a search!</p>
+        {% endif %}
+    </div>
 
-<h2>Watchlist</h2>
-<div class="movie-list">
-    {% for movie in watchlist_movies %}
-        <div class="movie-item">
-            <img src="{{ movie.movie.tmdb_poster_path }}" alt="{{ movie.movie.title }}" class="movie-poster">
-            <div class="movie-details">
-                <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a>
-                <p>{{ movie.movie.release_date }}</p>
+    {% if custom_watchlists %}
+        <h2>Custom Watchlists</h2>
+        {% for watchlist in custom_watchlists %}
+            <div class="custom-watchlist-header">
+                <h3>
+                    <a href="{% url 'view_custom_watchlist' watchlist.id %}">{{ watchlist.name }}</a> <a href="{% url 'delete_custom_watchlist' watchlist.id %}" class="delete-icon">🗑️</a>
+                </h3>
             </div>
-        </div>
-    {% endfor %}
+            <div class="movie-list">
+                {% if watchlist.items.all %}
+                    {% for item in watchlist.items.all|slice:":5" %}
+                        <div class="movie-item">
+                            <img src="{{ item.movie.tmdb_poster_path }}" alt="{{ item.movie.title }}" class="movie-poster">
+                            <div class="movie-details">
+                                <a href="{% url 'movie_details' item.movie.id %}">{{ item.movie.title }}</a>
+                                <p>{{ item.movie.release_date }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>Nothing here, start by making a search!</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endif %}
 </div>
 {% endblock %}

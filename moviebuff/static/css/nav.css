@@ -1,14 +1,45 @@
+/* moviebuff/static/css/nav.css */
+
 .nav {
     list-style-type: none;
     padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
 }
 
 .nav li {
-    display: inline;
-    margin-right: 10px;
+    margin: 0 15px;
 }
 
 .nav a {
     color: #333;
     text-decoration: none;
+    font-weight: bold;
+    padding: 15px 0;
+    display: block;
+}
+
+.nav a:hover {
+    color: #0056b3;
+}
+
+/* Responsive Design for Mobile Screens */
+@media (max-width: 768px) {
+    .nav {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .nav li {
+        margin: 10px 0;
+        width: 100%;
+        text-align: center;
+    }
+
+    .nav a {
+        padding: 10px 0;
+    }
 }

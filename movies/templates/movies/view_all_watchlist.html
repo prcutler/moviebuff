@@ -1,0 +1,24 @@
+{% extends 'moviebuff/base.html' %}
+
+{% block title %}All Watchlist Movies{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>All Watchlist Movies</h2>
+    <div class="movie-list">
+        {% if watchlist_movies %}
+            {% for movie in watchlist_movies %}
+                <div class="movie-item">
+                    <img src="{{ movie.movie.tmdb_poster_path }}" alt="{{ movie.movie.title }}" class="movie-poster">
+                    <div class="movie-details">
+                        <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a>
+                        <p>{{ movie.movie.release_date }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Nothing here, start by making a search!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
