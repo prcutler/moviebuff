@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
+import environ
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,14 +21,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
+# Initialize environment variables
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-l8=$d^y#o$d$lw)qmgiaww&qw&y5kwiv&d$0!f%!j2+9*++put'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ['moviebuff.retiolus.net', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://moviebuff.retiolus.net']
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS')
 
 USE_I18N = True
 USE_L10N = True
@@ -152,6 +160,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/dashboard/'
 
-TMDB_API_KEY = '1f3e948e30bb244ee25bf96c3ccaba27'
+TMDB_API_KEY = env('TMDB_API_KEY')
+
+DOMAIN_NAME = env('DOMAIN_NAME')
 
 DOMAIN_NAME = "https://moviebuff.retiolus.net"
