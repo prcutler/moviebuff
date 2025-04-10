@@ -59,14 +59,14 @@
             {% endif %}
         </div>
 
-        <div class="stats">
-            <h3>User Stats</h3>
+        <div class="stats-section">
+            <h3>Statistics</h3>
             <p><strong>Total Reviews:</strong> {{ total_reviews }}</p>
             <p><strong>Average Rating:</strong> {{ average_rating|floatformat:2 }}/5</p>
         </div>
 
-        <div class="reviews">
-            <h3>Other Users' Reviews</h3>
+        <div class="reviews-section">
+            <h3>User Reviews</h3>
             {% if other_reviews %}
                 {% for review in other_reviews %}
                     <div class="review">
