@@ -19,10 +19,10 @@
 
         <div class="external-data">
             <h3>External Data</h3>
-            <p><strong>TMDB ID:</strong> {{ movie.tmdb_id }}</p>
+            <p><strong>TMDb ID:</strong> {{ movie.tmdb_id }}</p>
             <p><strong>IMDb ID:</strong> {{ movie.imdb_id }}</p>
-            <p><strong>TMDB Vote Average:</strong> {{ movie.tmdb_vote_average }}/10</p>
-            <p><strong>TMDB Vote Count:</strong> {{ movie.tmdb_vote_count }}</p>
+            <p><strong>TMDb Vote Average:</strong> {{ movie.tmdb_vote_average }}/10</p>
+            <p><strong>TMDb Vote Count:</strong> {{ movie.tmdb_vote_count }}</p>
         </div>
 
         <div class="user-data">
@@ -56,6 +56,31 @@
                         </li>
                     {% endfor %}
                 </ul>
+            {% endif %}
+        </div>
+
+        <div class="stats">
+            <h3>User Stats</h3>
+            <p><strong>Total Reviews:</strong> {{ total_reviews }}</p>
+            <p><strong>Average Rating:</strong> {{ average_rating|floatformat:2 }}/5</p>
+        </div>
+
+        <div class="reviews">
+            <h3>Other Users' Reviews</h3>
+            {% if other_reviews %}
+                {% for review in other_reviews %}
+                    <div class="review">
+                        <p><strong>{{ review.user.username }}</strong> ({{ review.watched_date }})</p>
+                        {% if review.rating is not None %}
+                            <p><strong>Rating:</strong> {{ review.rating }}/5</p>
+                        {% endif %}
+                        {% if review.review %}
+                            <p><strong>Review:</strong> {{ review.review }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No reviews yet.</p>
             {% endif %}
         </div>
     </div>

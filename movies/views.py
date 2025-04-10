@@ -1,4 +1,5 @@
 import time
+from django.db.models import Avg
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Movie, Watched, Watchlist, CustomWatchlist, CustomWatchlistItem
@@ -62,12 +63,20 @@ def movie_details(request, movie_id):
     # Get custom watchlists that contain the movie
     custom_watchlists = CustomWatchlist.objects.filter(items__movie=movie, users=request.user).distinct()
 
+    # Calculate user stats
+    total_reviews = Watched.objects.filter(movie=movie).count()
+    average_rating = Watched.objects.filter(movie=movie, rating__isnull=False).aggregate(Avg('rating'))['rating__avg']
+    other_reviews = Watched.objects.filter(movie=movie).order_by('-watched_date')
+
     return render(request, 'movies/movie_details.html', {
         'movie': movie,
         'is_watched': is_watched,
         'is_in_watchlist': is_in_watchlist,
         'watched_entry': watched_entry,
         'custom_watchlists': custom_watchlists,
+        'total_reviews': total_reviews,
+        'average_rating': average_rating,
+        'other_reviews': other_reviews,
     })
 
 def add_to_watched(request, movie_id):
