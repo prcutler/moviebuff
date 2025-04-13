@@ -15,12 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from activitypub.views import webfinger
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('.well-known/webfinger', webfinger, name='webfinger'), 
     path("", include("users.urls")),
     path('movies/', include('movies.urls')),
-    path('activitypub/', include('activitypub.urls'))
 ]

@@ -54,7 +54,6 @@ LOCALE_PATHS = [
 # Application definition
 
 INSTALLED_APPS = [
-    'activitypub',
     'users',
     'movies',
     'django.contrib.admin',

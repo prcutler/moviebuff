@@ -5,8 +5,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Movie, Watched, Watchlist, CustomWatchlist, CustomWatchlistItem
 from connectors.tmdb_connector import TMDbConnector
 from django.conf import settings
-from activitypub.utils import publish_activity
-from activitypub.models import Actor
 from .forms import WatchedForm, WatchlistForm
 
 def search_movies(request):
