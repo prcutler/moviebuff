@@ -1,0 +1,39 @@
+.movie-details-container {
+    display: flex;
+    gap: 20px;
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+    max-width: 1200px;
+}
+
+.main-content, .secondary-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.main-content {
+    flex: 2; /* This column takes 2/3 of the width */
+}
+
+.secondary-content {
+    flex: 1; /* This column takes 1/3 of the width */
+}
+
+.movie-card, .reviews-section, .external-data, .user-data {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    overflow: hidden;
+}
+
+.external-data h3, .user-data h3, .reviews-section h3 {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+    font-size: 20px;
+}
+
+.external-data p, .user-data p, .reviews-section p {
+    margin: 10px 0;
+}

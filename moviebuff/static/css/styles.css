@@ -2,13 +2,14 @@
 @import url('footer.css');
 @import url('nav.css');
 @import url('dashboard.css');
+@import url('movie_details.css');
 @import url('movie_card.css');
 @import url('user_data.css');
 @import url('external_data.css');
 @import url('search_bar.css');
 @import url('pagination.css');
 @import url('form.css');
-@import url('stats.css');
+@import url('reviews_section.css');
 
 body {
     font-family: Arial, sans-serif;
