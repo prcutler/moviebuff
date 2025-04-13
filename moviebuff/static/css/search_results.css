@@ -1,10 +1,10 @@
-.movie-results {
+.list-movie-results {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.movie-result-item {
+.list-movie-result-item {
     display: flex;
     align-items: flex-start;
     border: 1px solid #ddd;
@@ -15,63 +15,63 @@
     background-color: #fff;
 }
 
-.movie-poster {
+.list-movie-poster {
     width: 100px;
     height: auto;
     margin-right: 20px;
     border-radius: 5px;
 }
 
-.movie-details {
+.list-movie-details {
     flex: 1;
 }
 
-.movie-details h3 {
+.list-movie-details h3 {
     margin: 0;
     font-size: 1.5em;
     color: #333;
 }
 
-.movie-details a {
+.list-movie-details a {
     text-decoration: none;
     color: inherit;
 }
 
-.movie-details p {
+.list-movie-details p {
     margin: 5px 0;
     font-size: 1em;
     color: #777;
 }
 
-.release-date {
+.list-release-date {
     font-style: italic;
 }
 
-.alternative-titles {
+.list-alternative-titles {
     font-size: 0.9em;
     color: #555;
 }
 
-.director {
+.list-director {
     font-weight: bold;
 }
 
-.pagination {
+.list-pagination {
     margin-top: 20px;
     text-align: center;
 }
 
-.pagination .step-links a {
+.list-pagination .list-step-links a {
     margin: 0 5px;
     text-decoration: none;
     color: #007bff;
 }
 
-.pagination .step-links a:hover {
+.list-pagination .list-step-links a:hover {
     text-decoration: underline;
 }
 
-.pagination .current {
+.list-pagination .list-current {
     font-weight: bold;
     margin: 0 10px;
 }

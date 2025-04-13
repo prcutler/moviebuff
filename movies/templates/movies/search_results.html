@@ -10,22 +10,22 @@
             <button type="submit">Search</button>
         </form>
         {% if page_obj %}
-            <div class="movie-results">
+            <div class="list-movie-results">
                 {% for movie in page_obj %}
-                    <div class="movie-result-item">
+                    <div class="list-movie-result-item">
                         <a href="{% url 'handle_movie_redirect' movie.id %}">
-                            <img src="https://image.tmdb.org/t/p/w600_and_h900_bestv2{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster">
+                            <img src="https://image.tmdb.org/t/p/w600_and_h900_bestv2{{ movie.poster_path }}" alt="{{ movie.title }}" class="list-movie-poster">
                         </a>
-                        <div class="movie-details">
+                        <div class="list-movie-details">
                             <h4><a href="{% url 'handle_movie_redirect' movie.id %}">{{ movie.title }}</a></h3>
-                            <p class="release-date">{{ movie.release_date }}</p>
+                            <p class="list-release-date">{{ movie.release_date }}</p>
                         </div>
                     </div>
                 {% endfor %}
             </div>
 
             <div class="pagination">
-                <span class="step-links">
+                <span class="list-step-links">
                     {% if page_obj.has_previous %}
                         <a href="?page=1&q={{ query }}">&laquo; first</a>
                         <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}">previous</a>
