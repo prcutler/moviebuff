@@ -87,11 +87,6 @@ def add_to_watched(request, movie_id):
             watched.movie = movie
             watched.save()
 
-            # Publish activity
-            actor, created = Actor.objects.get_or_create(user=request.user)
-            to_list = [follower.user_to.actor.get_absolute_url() for follower in request.user.followers.all()]
-            publish_activity(actor, "Create", f"{request.user.username} a regardé {movie.title}.", to_list)
-
             return redirect('dashboard')
     else:
         form = WatchedForm()

@@ -19,10 +19,10 @@
 
         <div class="external-data">
             <h3>External Data</h3>
-            <p><strong>TMDb ID:</strong> {{ movie.tmdb_id }}</p>
-            <p><strong>IMDb ID:</strong> {{ movie.imdb_id }}</p>
-            <p><strong>TMDb Vote Average:</strong> {{ movie.tmdb_vote_average }}/10</p>
-            <p><strong>TMDb Vote Count:</strong> {{ movie.tmdb_vote_count }}</p>
+            <p><strong>TMDB ID:</strong> <a href="https://www.themoviedb.org/movie/{{ movie.tmdb_id }}">{{ movie.tmdb_id }}</a></p>
+            <p><strong>IMDb ID:</strong> <a href="https://www.imdb.com/title/{{ movie.imdb_id }}">{{ movie.imdb_id }}</a></p>
+            <p><strong>TMDB Vote Average:</strong> {{ movie.tmdb_vote_average }}/10</p>
+            <p><strong>TMDB Vote Count:</strong> {{ movie.tmdb_vote_count }}</p>
         </div>
 
         <div class="user-data">

@@ -7,11 +7,15 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 
     <div class="container">
-        <h1>Bienvenue sur MovieBuff !</h1>
+        <h1>Welcome to MovieBuff!</h1>
+        <div class="disclaimer">
+            <p><strong>Disclaimer:</strong> This server is intended for demonstration and development purposes only. It runs the latest commits from the development branch, which may include experimental features and changes. Please be aware that data on this server may be reset or deleted at any time without prior notice.</p>
+            <p>For more information, please visit the <a href="https://codeberg.org/retiolus/moviebuff" target="_blank">Codeberg repository</a>.</p>
+        </div>
         {% if user.is_authenticated %}
-            <p>Bonjour, {{ user.username }} ! Accédez à votre <a href="{% url 'dashboard' %}">tableau de bord</a>.</p>
+            <p>Hello, {{ user.username }}! Access your <a href="{% url 'dashboard' %}">dashboard</a>.</p>
         {% else %}
-            <p>Veuillez vous <a href="{% url 'login' %}">connecter</a> ou <a href="{% url 'register' %}">créer un compte</a>.</p>
+            <p>Please <a href="{% url 'login' %}">log in</a> or <a href="{% url 'register' %}">create an account</a>.</p>
         {% endif %}
     </div>
 {% endblock %}

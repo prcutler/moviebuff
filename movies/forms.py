@@ -16,16 +16,13 @@ class WatchlistForm(forms.Form):
         user = kwargs.pop('user', None)
         super(WatchlistForm, self).__init__(*args, **kwargs)
 
-        # Add the default watchlist option
         choices = [('default', 'Default Watchlist')]
 
-        # Add existing custom watchlists if any
         if user:
             custom_watchlists = CustomWatchlist.objects.filter(users=user)
             if custom_watchlists.exists():
                 choices.extend([(watchlist.id, watchlist.name) for watchlist in custom_watchlists])
 
-        # Add the option to create a new custom watchlist
         choices.append(('new', 'New Custom Watchlist'))
 
         self.fields['watchlist'] = forms.ChoiceField(choices=choices, label="Select Watchlist")
