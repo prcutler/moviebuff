@@ -8,13 +8,7 @@
     <div class="movie-list">
         {% if custom_watchlist_items %}
             {% for item in custom_watchlist_items %}
-                <div class="movie-item">
-                    <img src="{{ item.movie.tmdb_poster_path }}" alt="{{ item.movie.title }}" class="movie-poster">
-                    <div class="movie-details">
-                        <a href="{% url 'movie_details' item.movie.id %}">{{ item.movie.title }}</a>
-                        <p>{{ item.movie.release_date }}</p>
-                    </div>
-                </div>
+                {% include 'movies/components/movie_card.html' %}
             {% endfor %}
         {% else %}
             <p>Nothing here, start by making a search!</p>

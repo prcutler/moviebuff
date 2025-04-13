@@ -1,0 +1,77 @@
+.movie-results {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.movie-result-item {
+    display: flex;
+    align-items: flex-start;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    background-color: #fff;
+}
+
+.movie-poster {
+    width: 100px;
+    height: auto;
+    margin-right: 20px;
+    border-radius: 5px;
+}
+
+.movie-details {
+    flex: 1;
+}
+
+.movie-details h3 {
+    margin: 0;
+    font-size: 1.5em;
+    color: #333;
+}
+
+.movie-details a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.movie-details p {
+    margin: 5px 0;
+    font-size: 1em;
+    color: #777;
+}
+
+.release-date {
+    font-style: italic;
+}
+
+.alternative-titles {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.director {
+    font-weight: bold;
+}
+
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.pagination .step-links a {
+    margin: 0 5px;
+    text-decoration: none;
+    color: #007bff;
+}
+
+.pagination .step-links a:hover {
+    text-decoration: underline;
+}
+
+.pagination .current {
+    font-weight: bold;
+    margin: 0 10px;
+}

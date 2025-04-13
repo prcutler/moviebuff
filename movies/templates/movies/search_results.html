@@ -10,13 +10,15 @@
             <button type="submit">Search</button>
         </form>
         {% if page_obj %}
-            <div class="movie-list">
+            <div class="movie-results">
                 {% for movie in page_obj %}
-                    <div class="movie-item">
-                        <img src="https://image.tmdb.org/t/p/w600_and_h900_bestv2{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster">
+                    <div class="movie-result-item">
+                        <a href="{% url 'handle_movie_redirect' movie.id %}">
+                            <img src="https://image.tmdb.org/t/p/w600_and_h900_bestv2{{ movie.poster_path }}" alt="{{ movie.title }}" class="movie-poster">
+                        </a>
                         <div class="movie-details">
-                            <a href="{% url 'handle_movie_redirect' movie.id %}">{{ movie.title }}</a>
-                            <p>{{ movie.release_date }}</p>
+                            <h4><a href="{% url 'handle_movie_redirect' movie.id %}">{{ movie.title }}</a></h3>
+                            <p class="release-date">{{ movie.release_date }}</p>
                         </div>
                     </div>
                 {% endfor %}

@@ -1,0 +1,5 @@
+<div class="movie-item">
+    <a href="{% url 'movie_details' movie.movie.id %}">
+        <img src="{{ movie.movie.tmdb_poster_path }}" alt="{{ movie.movie.title }}" class="movie-poster">
+    </a>
+</div>
