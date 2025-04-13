@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from .forms import RegisterForm
@@ -39,3 +39,7 @@ def user_profile(request, username):
         'watched_movies': watched_movies,
         'watchlist_movies': watchlist_movies
     })
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
