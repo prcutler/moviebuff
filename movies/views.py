@@ -62,9 +62,9 @@ def movie_details(request, movie_id):
     custom_watchlists = CustomWatchlist.objects.filter(items__movie=movie, users=request.user).distinct()
 
     # Calculate user stats
-    total_reviews = Watched.objects.filter(movie=movie).count()
+    total_reviews = Watched.objects.filter(movie=movie, review__isnull=False).count()
     average_rating = Watched.objects.filter(movie=movie, rating__isnull=False).aggregate(Avg('rating'))['rating__avg']
-    other_reviews = Watched.objects.filter(movie=movie).order_by('-watched_date')
+    other_reviews = Watched.objects.filter(movie=movie, review__isnull=False).exclude(review__exact='').order_by('-watched_date')
 
     return render(request, 'movies/movie_details.html', {
         'movie': movie,

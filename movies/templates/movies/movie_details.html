@@ -19,7 +19,7 @@
                     <p><strong>Runtime:</strong> {{ movie.runtime }} minutes</p>
                     {% if total_reviews or average_rating %}
                         <div class="stats-section">
-                            <p><strong>Average Rating:</strong> {{ average_rating|floatformat:2 }}/5 ({{ total_reviews }})</p>
+                            <p><strong>Average Rating:</strong> {{ average_rating|floatformat:2 }}/5 ({{ total_reviews }} reviews)</p>
                         </div>
                     {% endif %}
                 </div>
@@ -29,15 +29,15 @@
                 <h3>Reviews</h3>
                 {% if other_reviews %}
                     {% for review in other_reviews %}
-                        <div class="review">
-                            <p><strong>{{ review.user.username }}</strong> ({{ review.watched_date }})</p>
-                            {% if review.rating is not None %}
-                                <p><strong>Rating:</strong> {{ review.rating }}/5</p>
-                            {% endif %}
-                            {% if review.review %}
+                        {% if review.review %} <!-- Only display reviews with text -->
+                            <div class="review">
+                                <p><strong>{{ review.user.username }}</strong> ({{ review.watched_date }})</p>
+                                {% if review.rating is not None %}
+                                    <p><strong>Rating:</strong> {{ review.rating }}/5</p>
+                                {% endif %}
                                 <p><strong>Review:</strong> {{ review.review }}</p>
-                            {% endif %}
-                        </div>
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 {% else %}
                     <p>No reviews yet.</p>
@@ -50,7 +50,7 @@
                 <h3>External Data</h3>
                 <p><strong>TMDB ID:</strong> <a href="https://www.themoviedb.org/movie/{{ movie.tmdb_id }}" target="_blank">{{ movie.tmdb_id }}</a></p>
                 <p><strong>IMDb ID:</strong> <a href="https://www.imdb.com/title/{{ movie.imdb_id }}" target="_blank">{{ movie.imdb_id }}</a></p>
-                <p><strong>TMDB Vote Average:</strong> {{ movie.tmdb_vote_average }}/10 ({{ movie.tmdb_vote_count }})</p>
+                <p><strong>TMDB Vote Average:</strong> {{ movie.tmdb_vote_average }}/10 ({{ movie.tmdb_vote_count }} votes)</p>
             </div>
 
             <div class="user-data">
