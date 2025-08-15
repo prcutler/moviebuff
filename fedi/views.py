@@ -47,3 +47,41 @@ def webfinger(request):
     }
     return JsonResponse(data, content_type="application/jrd+json")
 
+
+def actor(request, username):
+    """Return an ActivityPub Person for a local user."""
+    if not settings.ACTIVITYPUB_ENABLED:
+        raise Http404
+
+    accept = request.META.get("HTTP_ACCEPT", "")
+    if "application/activity+json" not in accept and "application/ld+json" not in accept:
+        raise Http404
+
+    User = get_user_model()
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        raise Http404
+
+    profile = user.userprofile
+    if not profile.fedi_enabled:
+        raise Http404
+
+    actor = user.fediactor
+    data = {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "id": actor.actor_id,
+        "type": "Person",
+        "preferredUsername": user.username,
+        "inbox": actor.inbox_url,
+        "outbox": actor.outbox_url,
+        "followers": actor.followers_url,
+        "publicKey": {
+            "id": f"{actor.actor_id}#main-key",
+            "owner": actor.actor_id,
+            "publicKeyPem": actor.public_key_pem,
+        },
+    }
+
+    return JsonResponse(data, content_type="application/activity+json")
+
