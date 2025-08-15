@@ -1,8 +1,13 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from urllib.parse import urlparse
+import json
 import re
+
+from .models import FediFollower
+from .utils import HttpSignatureError, post_activity, verify_http_signature
 
 
 def webfinger(request):
@@ -84,4 +89,77 @@ def actor(request, username):
     }
 
     return JsonResponse(data, content_type="application/activity+json")
+
+
+@csrf_exempt
+def inbox(request, username):
+    """Handle incoming activities for a local user."""
+    if not settings.ACTIVITYPUB_ENABLED:
+        raise Http404
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    User = get_user_model()
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        raise Http404
+
+    profile = user.userprofile
+    actor = getattr(user, "fediactor", None)
+    if not actor:
+        raise Http404
+
+    try:
+        activity = json.loads(request.body)
+    except Exception:
+        return HttpResponse(status=400)
+
+    try:
+        remote_actor = verify_http_signature(request)
+    except HttpSignatureError:
+        return HttpResponse(status=401)
+
+    activity_type = activity.get("type")
+    if activity_type == "Follow" and activity.get("object") == actor.actor_id:
+        inbox_url = remote_actor.get("inbox")
+        shared_inbox = remote_actor.get("endpoints", {}).get("sharedInbox", "")
+        if profile.fedi_enabled:
+            follower, _ = FediFollower.objects.get_or_create(
+                actor=actor,
+                remote_actor_id=activity.get("actor"),
+                defaults={"inbox": inbox_url, "shared_inbox": shared_inbox},
+            )
+            follower.state = FediFollower.ACCEPTED
+            follower.save()
+            accept = {
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "type": "Accept",
+                "actor": actor.actor_id,
+                "object": activity,
+            }
+            if inbox_url:
+                post_activity(actor, inbox_url, accept)
+            return HttpResponse(status=202)
+        else:
+            reject = {
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "type": "Reject",
+                "actor": actor.actor_id,
+                "object": activity,
+            }
+            if inbox_url:
+                post_activity(actor, inbox_url, reject)
+            return HttpResponse(status=403)
+    elif activity_type == "Undo":
+        obj = activity.get("object", {})
+        if isinstance(obj, dict) and obj.get("type") == "Follow" and obj.get(
+            "object"
+        ) == actor.actor_id:
+            FediFollower.objects.filter(
+                actor=actor, remote_actor_id=obj.get("actor")
+            ).delete()
+            return HttpResponse(status=202)
+
+    return HttpResponse(status=202)
 
