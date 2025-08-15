@@ -2,6 +2,10 @@ import time
 from django.db.models import Avg
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 from .models import Movie, Watched, Watchlist, CustomWatchlist, CustomWatchlistItem
 from connectors.tmdb_connector import TMDbConnector
 from django.conf import settings
@@ -76,6 +80,48 @@ def movie_details(request, movie_id):
         'average_rating': average_rating,
         'other_reviews': other_reviews,
     })
+
+
+@login_required
+@require_POST
+def toggle_watchlist(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    entry = Watchlist.objects.filter(user=request.user, movie=movie).first()
+    if entry:
+        entry.delete()
+        return JsonResponse({
+            'success': True,
+            'message': 'Removed from watchlist',
+            'new_label': 'Add to Watchlist',
+        })
+    else:
+        Watchlist.objects.create(user=request.user, movie=movie)
+        return JsonResponse({
+            'success': True,
+            'message': 'Added to watchlist',
+            'new_label': 'Remove from Watchlist',
+        })
+
+
+@login_required
+@require_POST
+def toggle_watched(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    entry = Watched.objects.filter(user=request.user, movie=movie).first()
+    if entry:
+        entry.delete()
+        return JsonResponse({
+            'success': True,
+            'message': 'Removed from watched',
+            'new_label': 'Add to Watched',
+        })
+    else:
+        Watched.objects.create(user=request.user, movie=movie, watched_date=timezone.now())
+        return JsonResponse({
+            'success': True,
+            'message': 'Added to watched',
+            'new_label': 'Remove from Watched',
+        })
 
 def add_to_watched(request, movie_id):
     movie = get_object_or_404(Movie, id=movie_id)
