@@ -196,3 +196,29 @@ class InboxTests(TestCase):
         self.assertEqual(FediFollower.objects.count(), 0)
         mock_post.assert_not_called()
 
+    @patch("fedi.utils.requests.post")
+    @patch("fedi.utils.requests.get")
+    def test_follow_accept_after_reenable(self, mock_get, mock_post):
+        profile = self.user.userprofile
+        profile.fedi_enabled = False
+        profile.save()
+        profile.fedi_enabled = True
+        profile.save()
+        mock_get.return_value.json.return_value = self.actor_json
+        mock_get.return_value.raise_for_status.return_value = None
+        follow = {
+            "type": "Follow",
+            "actor": self.remote_actor,
+            "object": self.actor_id,
+        }
+        body = json.dumps(follow).encode()
+        headers = self._signed_headers(body)
+        rf = RequestFactory()
+        request = rf.post(
+            "/users/alice/inbox", body, content_type="application/activity+json"
+        )
+        request.META.update(headers)
+        response = inbox(request, "alice")
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(FediFollower.objects.count(), 1)
+

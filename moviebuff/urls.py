@@ -10,7 +10,5 @@ urlpatterns = [
     path("", include("users.urls")),
     path("movies/", include("movies.urls")),
 ]
-
-if settings.ACTIVITYPUB_ENABLED:
-    urlpatterns.append(path("", include("fedi.urls")))
+urlpatterns.append(path("", include("fedi.urls")))
 

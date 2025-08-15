@@ -73,3 +73,10 @@ class MovieActivityTests(TestCase):
         self.assertIn("Great!", obj["content"])
         self.assertIn("Read on MovieBuff", obj["content"])
         self.assertEqual(obj["url"], f"https://example.com/movies/details/{self.movie.id}")
+
+    def test_no_activity_when_disabled(self):
+        profile = self.user.userprofile
+        profile.fedi_enabled = False
+        profile.save()
+        Watchlist.objects.create(user=self.user, movie=self.movie)
+        self.assertEqual(FediActivity.objects.count(), 0)

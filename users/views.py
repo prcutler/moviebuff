@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib import messages
+from django.conf import settings
+from urllib.parse import urlparse
 from .forms import RegisterForm
 from movies.models import Watched, Watchlist, CustomWatchlist
 
@@ -34,11 +37,29 @@ def user_profile(request, username):
     user = get_object_or_404(User, username=username)
     watched_movies = Watched.objects.filter(user=user)
     watchlist_movies = Watchlist.objects.filter(user=user)
-    return render(request, 'users/user_profile.html', {
-        'profile_user': user,
-        'watched_movies': watched_movies,
-        'watchlist_movies': watchlist_movies
-    })
+
+    if request.user == user and request.method == "POST":
+        profile = user.userprofile
+        profile.fedi_enabled = bool(request.POST.get("fedi_enabled"))
+        profile.fedi_discoverable = bool(request.POST.get("fedi_discoverable"))
+        profile.save()
+        messages.success(request, "Fediverse settings updated")
+        return redirect("user_profile", username=user.username)
+
+    profile = user.userprofile
+    domain = urlparse(settings.ACTIVITYPUB_DOMAIN or "").hostname or request.get_host()
+    remote_handle = f"@{user.username}@{domain}"
+    return render(
+        request,
+        'users/user_profile.html',
+        {
+            'profile_user': user,
+            'watched_movies': watched_movies,
+            'watchlist_movies': watchlist_movies,
+            'profile': profile,
+            'remote_handle': remote_handle,
+        },
+    )
 
 def logout_view(request):
     logout(request)

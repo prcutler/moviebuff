@@ -18,14 +18,18 @@ def create_user_profile(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=UserProfile)
 def manage_fedi_actor(sender, instance, **kwargs):
-    if instance.fedi_enabled and settings.ACTIVITYPUB_ENABLED:
-        from fedi.models import FediActor
+    if not settings.ACTIVITYPUB_ENABLED:
+        return
 
-        if not hasattr(instance.user, "fediactor"):
+    from fedi.models import FediActor
+
+    actor = getattr(instance.user, "fediactor", None)
+    if instance.fedi_enabled:
+        if not actor:
             domain = settings.ACTIVITYPUB_DOMAIN.rstrip("/")
             username = instance.user.username
             base = f"{domain}/users/{username}"
-            FediActor.objects.create(
+            actor = FediActor.objects.create(
                 user=instance.user,
                 actor_id=base,
                 inbox_url=f"{base}/inbox",
@@ -33,4 +37,7 @@ def manage_fedi_actor(sender, instance, **kwargs):
                 followers_url=f"{base}/followers",
                 discoverable=instance.fedi_discoverable,
             )
+    if actor and actor.discoverable != instance.fedi_discoverable:
+        actor.discoverable = instance.fedi_discoverable
+        actor.save()
 
