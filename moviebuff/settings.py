@@ -50,6 +50,7 @@ LOCALE_PATHS = [
 INSTALLED_APPS = [
     'users',
     'movies',
+    'fedi',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -158,3 +159,7 @@ TMDB_API_KEY = env('TMDB_API_KEY')
 DOMAIN_NAME = env('DOMAIN_NAME')
 
 DOMAIN_NAME = "https://moviebuff.retiolus.net"
+
+ACTIVITYPUB_ENABLED = env.bool('ACTIVITYPUB_ENABLED', default=False)
+ACTIVITYPUB_DOMAIN = env('ACTIVITYPUB_DOMAIN', default='')
+ACTIVITYPUB_USER_AGENT = env('ACTIVITYPUB_USER_AGENT', default='moviebuff-activitypub')
