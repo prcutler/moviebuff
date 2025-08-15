@@ -36,15 +36,9 @@ DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS')
 
-USE_I18N = True
-USE_L10N = True
-
-LANGUAGE_CODE = 'en-us'  # Default language
-
 LANGUAGES = [
     ('en', _('English')),
     ('fr', _('French')),
-    # Add more languages as needed
 ]
 
 LOCALE_PATHS = [
@@ -56,6 +50,7 @@ LOCALE_PATHS = [
 INSTALLED_APPS = [
     'users',
     'movies',
+    'fedi',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -136,9 +131,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Paris'
 
 USE_I18N = True
 
@@ -164,3 +159,7 @@ TMDB_API_KEY = env('TMDB_API_KEY')
 DOMAIN_NAME = env('DOMAIN_NAME')
 
 DOMAIN_NAME = "https://moviebuff.retiolus.net"
+
+ACTIVITYPUB_ENABLED = env.bool('ACTIVITYPUB_ENABLED', default=False)
+ACTIVITYPUB_DOMAIN = env('ACTIVITYPUB_DOMAIN', default='')
+ACTIVITYPUB_USER_AGENT = env('ACTIVITYPUB_USER_AGENT', default='moviebuff-activitypub')

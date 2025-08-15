@@ -2,6 +2,12 @@ import time
 from django.db.models import Avg
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.utils.html import escape
 from .models import Movie, Watched, Watchlist, CustomWatchlist, CustomWatchlistItem
 from connectors.tmdb_connector import TMDbConnector
 from django.conf import settings
@@ -12,9 +18,23 @@ def search_movies(request):
     if query:
         tmdb_connector = TMDbConnector(api_key=settings.TMDB_API_KEY)
         results = tmdb_connector.search_movie(query)
-        paginator = Paginator(results, 10) 
+        paginator = Paginator(results, 10)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            html = render_to_string(
+                'movies/components/search_result_cards.html',
+                {'page_obj': page_obj},
+                request=request,
+            )
+            next_url = None
+            if page_obj.has_next():
+                next_url = (
+                    f"{request.path}?page={page_obj.next_page_number}&q={escape(query)}"
+                )
+            return JsonResponse({'html': html, 'next_url': next_url})
+
         return render(request, 'movies/search_results.html', {'page_obj': page_obj, 'query': query})
     return render(request, 'movies/search_results.html')
 
@@ -57,6 +77,7 @@ def movie_details(request, movie_id):
     is_watched = Watched.objects.filter(user=request.user, movie=movie).exists()
     is_in_watchlist = Watchlist.objects.filter(user=request.user, movie=movie).exists()
     watched_entry = Watched.objects.filter(user=request.user, movie=movie).first()
+    user_rating = int(watched_entry.rating) if watched_entry and watched_entry.rating is not None else 0
 
     # Get custom watchlists that contain the movie
     custom_watchlists = CustomWatchlist.objects.filter(items__movie=movie, users=request.user).distinct()
@@ -71,27 +92,80 @@ def movie_details(request, movie_id):
         'is_watched': is_watched,
         'is_in_watchlist': is_in_watchlist,
         'watched_entry': watched_entry,
+        'user_rating': user_rating,
         'custom_watchlists': custom_watchlists,
         'total_reviews': total_reviews,
         'average_rating': average_rating,
         'other_reviews': other_reviews,
     })
 
+
+@login_required
+@require_POST
+def toggle_watchlist(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    entry = Watchlist.objects.filter(user=request.user, movie=movie).first()
+    if entry:
+        entry.delete()
+        return JsonResponse({
+            'success': True,
+            'message': 'Removed from watchlist',
+            'new_label': 'Add to Watchlist',
+        })
+    else:
+        Watchlist.objects.create(user=request.user, movie=movie)
+        return JsonResponse({
+            'success': True,
+            'message': 'Added to watchlist',
+            'new_label': 'Remove from Watchlist',
+        })
+
+
+@login_required
+@require_POST
+def toggle_watched(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    entry = Watched.objects.filter(user=request.user, movie=movie).first()
+    if entry:
+        entry.delete()
+        return JsonResponse({
+            'success': True,
+            'message': 'Removed from watched',
+            'new_label': 'Add to Watched',
+        })
+    else:
+        Watched.objects.create(user=request.user, movie=movie, watched_date=timezone.now())
+        return JsonResponse({
+            'success': True,
+            'message': 'Added to watched',
+            'new_label': 'Remove from Watched',
+        })
+
 def add_to_watched(request, movie_id):
     movie = get_object_or_404(Movie, id=movie_id)
+    existing = Watched.objects.filter(user=request.user, movie=movie).first()
     if request.method == 'POST':
         form = WatchedForm(request.POST)
         if form.is_valid():
-            watched = form.save(commit=False)
-            watched.user = request.user
-            watched.movie = movie
-            watched.save()
+            is_rewatch = form.cleaned_data.get('is_rewatch')
+            instance = form.save(commit=False)
+            if existing:
+                if is_rewatch:
+                    existing.rewatch_count += 1
+                existing.watched_date = instance.watched_date
+                existing.rating = form.cleaned_data.get('rating')
+                existing.review = form.cleaned_data.get('review')
+                existing.save()
+            else:
+                instance.user = request.user
+                instance.movie = movie
+                instance.save()
 
             return redirect('dashboard')
     else:
         form = WatchedForm()
 
-    return render(request, 'movies/add_to_watched.html', {'form': form, 'movie': movie})
+    return render(request, 'movies/add_to_watched.html', {'form': form, 'movie': movie, 'existing': existing})
 
 def add_to_watchlist(request, movie_id):
     movie = get_object_or_404(Movie, id=movie_id)
@@ -141,16 +215,65 @@ def delete_custom_watchlist(request, watchlist_id):
 
 def view_all_watched(request):
     watched_movies = Watched.objects.filter(user=request.user).order_by('-watched_date')
-    return render(request, 'movies/view_all_watched.html', {'watched_movies': watched_movies})
+    paginator = Paginator(watched_movies, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string(
+            'movies/components/movie_card_list.html',
+            {'page_obj': page_obj},
+            request=request,
+        )
+        next_url = None
+        if page_obj.has_next():
+            next_url = f"{request.path}?page={page_obj.next_page_number}"
+        return JsonResponse({'html': html, 'next_url': next_url})
+
+    return render(request, 'movies/view_all_watched.html', {'page_obj': page_obj})
 
 def view_all_watchlist(request):
     watchlist_movies = Watchlist.objects.filter(user=request.user).order_by('-added_date')
-    return render(request, 'movies/view_all_watchlist.html', {'watchlist_movies': watchlist_movies})
+    paginator = Paginator(watchlist_movies, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string(
+            'movies/components/movie_card_list.html',
+            {'page_obj': page_obj},
+            request=request,
+        )
+        next_url = None
+        if page_obj.has_next():
+            next_url = f"{request.path}?page={page_obj.next_page_number}"
+        return JsonResponse({'html': html, 'next_url': next_url})
+
+    return render(request, 'movies/view_all_watchlist.html', {'page_obj': page_obj})
 
 def view_custom_watchlist(request, watchlist_id):
     custom_watchlist = get_object_or_404(CustomWatchlist, id=watchlist_id, users=request.user)
     custom_watchlist_items = custom_watchlist.items.all().order_by('-added_date')
-    return render(request, 'movies/view_custom_watchlist.html', {'custom_watchlist': custom_watchlist, 'custom_watchlist_items': custom_watchlist_items})
+    paginator = Paginator(custom_watchlist_items, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string(
+            'movies/components/movie_card_list.html',
+            {'page_obj': page_obj},
+            request=request,
+        )
+        next_url = None
+        if page_obj.has_next():
+            next_url = f"{request.path}?page={page_obj.next_page_number}"
+        return JsonResponse({'html': html, 'next_url': next_url})
+
+    return render(
+        request,
+        'movies/view_custom_watchlist.html',
+        {'custom_watchlist': custom_watchlist, 'page_obj': page_obj},
+    )
 
 def handle_tmdb_redirect(request, tmdb_id):
     movie = Movie.objects.filter(tmdb_id=tmdb_id).first()
@@ -167,3 +290,63 @@ def handle_tmdb_redirect(request, tmdb_id):
             tmdb_poster_path="https://image.tmdb.org/t/p/w600_and_h900_bestv2" + movie_data['poster_path']
         )
         return redirect('movie_details', movie_id=movie.id)
+
+
+@login_required
+@require_POST
+def update_rating(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    try:
+        rating = float(request.POST.get('rating'))
+    except (TypeError, ValueError):
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid rating'
+        }, status=400)
+
+    watched, _ = Watched.objects.get_or_create(
+        user=request.user,
+        movie=movie,
+        defaults={'watched_date': timezone.now()}
+    )
+    watched.rating = rating
+    watched.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Rating saved',
+        'rating': rating
+    })
+
+
+@login_required
+@require_POST
+def submit_review(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    review_text = request.POST.get('review', '').strip()
+
+    if not review_text:
+        return JsonResponse({
+            'success': False,
+            'message': 'Review cannot be empty'
+        }, status=400)
+
+    if len(review_text) > 300:
+        return JsonResponse({
+            'success': False,
+            'message': 'Review too long'
+        }, status=400)
+
+    watched, _ = Watched.objects.get_or_create(
+        user=request.user,
+        movie=movie,
+        defaults={'watched_date': timezone.now()}
+    )
+    watched.review = escape(review_text)
+    watched.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Review saved',
+        'review': watched.review
+    })

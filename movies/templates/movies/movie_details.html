@@ -1,37 +1,33 @@
 {% extends 'moviebuff/base.html' %}
-{% load static %}
 
 {% block title %}{{ movie.title }}{% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-
-    <div class="movie-details-container">
-        <div class="main-content">
-            <div class="movie-card">
-                <img src="{{ movie.tmdb_poster_path }}" alt="{{ movie.title }}">
-                <div class="movie-info">
-                    <h2>{{ movie.title }}</h2>
-                    <p><strong>Overview:</strong> {{ movie.overview }}</p>
-                    <p><strong>Release Date:</strong> {{ movie.release_date }}</p>
-                    <p><strong>Original Language:</strong> {{ movie.original_language }}</p>
-                    <p><strong>Budget:</strong> ${{ movie.budget }}</p>
-                    <p><strong>Runtime:</strong> {{ movie.runtime }} minutes</p>
+<section aria-labelledby="movie-title">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <img src="{{ movie.tmdb_poster_path }}" class="card-img-top" alt="{{ movie.title }} poster">
+                <div class="card-body">
+                    <h2 id="movie-title" class="card-title">{{ movie.title }}</h2>
+                    <p class="card-text"><strong>Overview:</strong> {{ movie.overview }}</p>
+                    <p class="card-text"><strong>Release Date:</strong> {{ movie.release_date }}</p>
+                    <p class="card-text"><strong>Original Language:</strong> {{ movie.original_language }}</p>
+                    <p class="card-text"><strong>Budget:</strong> ${{ movie.budget }}</p>
+                    <p class="card-text"><strong>Runtime:</strong> {{ movie.runtime }} minutes</p>
                     {% if total_reviews or average_rating %}
-                        <div class="stats-section">
-                            <p><strong>Average Rating:</strong> {{ average_rating|floatformat:2 }}/5 ({{ total_reviews }} reviews)</p>
-                        </div>
+                        <p class="card-text"><strong>Average Rating:</strong> {{ average_rating|floatformat:2 }}/5 ({{ total_reviews }} reviews)</p>
                     {% endif %}
                 </div>
             </div>
 
-            <div class="reviews-section">
-                <h3>Reviews</h3>
+            <section aria-labelledby="reviews-title" class="mb-4">
+                <h3 id="reviews-title">Reviews</h3>
                 {% if other_reviews %}
                     {% for review in other_reviews %}
-                        {% if review.review %} <!-- Only display reviews with text -->
-                            <div class="review">
-                                <p><strong>{{ review.user.username }}</strong> ({{ review.watched_date }})</p>
+                        {% if review.review %}
+                            <div class="border rounded p-3 mb-3">
+                                <p><strong>{{ review.user.username }}</strong> ({{ review.watched_date|date:"d/m/Y H:i" }})</p>
                                 {% if review.rating is not None %}
                                     <p><strong>Rating:</strong> {{ review.rating }}/5</p>
                                 {% endif %}
@@ -42,50 +38,213 @@
                 {% else %}
                     <p>No reviews yet.</p>
                 {% endif %}
-            </div>
+            </section>
         </div>
 
-        <div class="secondary-content">
-            <div class="external-data">
-                <h3>External Data</h3>
+        <div class="col-md-4">
+            <section aria-labelledby="external-data-title" class="mb-4">
+                <h3 id="external-data-title">External Data</h3>
                 <p><strong>TMDB ID:</strong> <a href="https://www.themoviedb.org/movie/{{ movie.tmdb_id }}" target="_blank">{{ movie.tmdb_id }}</a></p>
                 <p><strong>IMDb ID:</strong> <a href="https://www.imdb.com/title/{{ movie.imdb_id }}" target="_blank">{{ movie.imdb_id }}</a></p>
                 <p><strong>TMDB Vote Average:</strong> {{ movie.tmdb_vote_average }}/10 ({{ movie.tmdb_vote_count }} votes)</p>
-            </div>
+            </section>
 
-            <div class="user-data">
-                <h3>User Data</h3>
+            <section aria-labelledby="user-data-title">
+                <h3 id="user-data-title">User Data</h3>
                 {% if is_watched %}
-                    <p><strong>Watched Date:</strong> {{ watched_entry.watched_date }}</p>
-                    {% if watched_entry.rating is not None %}
-                        <p><strong>Rating:</strong> {{ watched_entry.rating }}/5</p>
-                    {% endif %}
-                    {% if watched_entry.review %}
-                        <p><strong>Review:</strong> {{ watched_entry.review }}</p>
-                    {% endif %}
-                    <a href="{% url 'remove_from_watched' movie.id %}">Remove from Watched</a>
-                {% else %}
-                    <a href="{% url 'add_to_watched' movie.id %}">Add to Watched</a>
+                    <p><strong>Watched Date:</strong> {{ watched_entry.watched_date|date:"d/m/Y H:i" }}{% if watched_entry.rewatch_count > 1 %} (Rewatch #{{ watched_entry.rewatch_count }}){% endif %}</p>
                 {% endif %}
 
-                {% if is_in_watchlist %}
-                    <a href="{% url 'remove_from_watchlist' movie.id %}">Remove from Watchlist</a>
-                {% else %}
-                    <a href="{% url 'add_to_watchlist' movie.id %}">Add to Watchlist</a>
-                {% endif %}
+                <form id="rating-form" data-url="{% url 'update_rating' movie.id %}" class="mb-3">
+                    <fieldset class="border-0 p-0 m-0">
+                        <legend>Your rating: <span id="current-rating">{% if watched_entry.rating is not None %}{{ watched_entry.rating }}/5{% else %}Not rated{% endif %}</span></legend>
+                        <div class="d-flex rating">
+                            {% for _ in "12345" %}
+                                <input type="radio" class="visually-hidden" name="rating" id="rating-{{ forloop.counter }}" value="{{ forloop.counter }}" {% if user_rating == forloop.counter %}checked{% endif %}>
+                                <label for="rating-{{ forloop.counter }}" class="star" aria-label="{{ forloop.counter }} star{% if forloop.counter != 1 %}s{% endif %}"><i class="bi {% if user_rating >= forloop.counter %}bi-star-fill{% else %}bi-star{% endif %}">★</i></label>
+                            {% endfor %}
+                        </div>
+                    </fieldset>
+                </form>
+
+                <form id="review-form" data-url="{% url 'submit_review' movie.id %}" class="mb-3">
+                    <div class="mb-2">
+                        <label for="review-text" class="form-label">Your Review</label>
+                        <textarea id="review-text" name="review" class="form-control" maxlength="300" rows="3">{{ watched_entry.review }}</textarea>
+                        <div class="form-text text-end"><span id="review-count">0</span>/300</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Review</button>
+                </form>
+                <div id="current-review" class="mt-2">{{ watched_entry.review }}</div>
+
+                <button id="watched-toggle" class="btn btn-primary btn-sm" data-url="{% url 'toggle_watched' movie.id %}">
+                    {% if is_watched %}Remove from Watched{% else %}Add to Watched{% endif %}
+                </button>
+
+                <button id="watchlist-toggle" class="btn btn-secondary btn-sm ms-2" data-url="{% url 'toggle_watchlist' movie.id %}">
+                    {% if is_in_watchlist %}Remove from Watchlist{% else %}Add to Watchlist{% endif %}
+                </button>
 
                 {% if custom_watchlists %}
-                    <h4>Custom Watchlists:</h4>
-                    <ul>
+                    <h4 class="mt-3">Custom Watchlists:</h4>
+                    <ul class="list-unstyled">
                         {% for watchlist in custom_watchlists %}
                             <li>
                                 {{ watchlist.name }}
-                                <a href="{% url 'remove_from_custom_watchlist' movie.id watchlist.id %}">Remove</a>
+                                <a href="{% url 'remove_from_custom_watchlist' movie.id watchlist.id %}" class="text-danger ms-2">Remove</a>
                             </li>
                         {% endfor %}
                     </ul>
                 {% endif %}
-            </div>
+            </section>
         </div>
     </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<div id="csrf-token" style="display:none;">{% csrf_token %}</div>
+<style>
+.rating label { cursor:pointer; }
+.rating .bi-star, .rating .bi-star-fill { font-size:1.5rem; }
+.rating .bi-star { color:#ccc; }
+.rating .bi-star-fill { color:#f5c518; }
+</style>
+<script>
+const csrftoken = document.querySelector('#csrf-token input').value;
+
+function showToast(message, type) {
+    const container = document.querySelector('.toast-container');
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+    toastEl.setAttribute('role', 'status');
+    toastEl.setAttribute('aria-live', 'polite');
+    toastEl.setAttribute('aria-atomic', 'true');
+    toastEl.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
+    container.appendChild(toastEl);
+    const t = new bootstrap.Toast(toastEl);
+    t.show();
+}
+
+function handleToggle(button) {
+    if (button.disabled) return;
+    const url = button.dataset.url;
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        showToast(data.message, data.success ? 'success' : 'danger');
+        button.textContent = data.new_label || originalText;
+    })
+    .catch(() => {
+        showToast('An error occurred', 'danger');
+        button.textContent = originalText;
+    })
+    .finally(() => {
+        button.disabled = false;
+    });
+}
+
+document.getElementById('watchlist-toggle').addEventListener('click', function() {
+    handleToggle(this);
+});
+document.getElementById('watched-toggle').addEventListener('click', function() {
+    handleToggle(this);
+});
+
+// Rating functionality
+const ratingForm = document.getElementById('rating-form');
+const ratingInputs = ratingForm.querySelectorAll('input[name="rating"]');
+let currentRating = ratingForm.querySelector('input:checked')?.value || 0;
+const starLabels = ratingForm.querySelectorAll('label.star');
+
+function highlightStars(value) {
+    starLabels.forEach((label, index) => {
+        const icon = label.querySelector('i');
+        if (index < value) {
+            icon.classList.add('bi-star-fill');
+            icon.classList.remove('bi-star');
+        } else {
+            icon.classList.add('bi-star');
+            icon.classList.remove('bi-star-fill');
+        }
+    });
+}
+
+ratingInputs.forEach(input => {
+    ['change', 'focus', 'mouseover'].forEach(evt => {
+        input.addEventListener(evt, () => highlightStars(input.value));
+    });
+
+    input.addEventListener('change', () => {
+        const value = input.value;
+        fetch(ratingForm.dataset.url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({rating: value})
+        })
+        .then(res => res.json())
+        .then(data => {
+            showToast(data.message, data.success ? 'success' : 'danger');
+            if (data.success) {
+                currentRating = value;
+                document.getElementById('current-rating').textContent = `${value}/5`;
+            }
+        })
+        .catch(() => showToast('An error occurred', 'danger'));
+    });
+});
+
+ratingForm.addEventListener('mouseleave', () => highlightStars(currentRating));
+highlightStars(currentRating);
+
+// Review functionality
+const reviewForm = document.getElementById('review-form');
+const reviewText = document.getElementById('review-text');
+const reviewCount = document.getElementById('review-count');
+const reviewDisplay = document.getElementById('current-review');
+
+reviewCount.textContent = reviewText.value.length;
+reviewText.addEventListener('input', () => {
+    reviewCount.textContent = reviewText.value.length;
+});
+
+reviewForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = reviewText.value.trim();
+    if (!text) {
+        showToast('Review cannot be empty', 'danger');
+        return;
+    }
+    fetch(reviewForm.dataset.url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({review: text})
+    })
+    .then(res => res.json())
+    .then(data => {
+        showToast(data.message, data.success ? 'success' : 'danger');
+        if (data.success) {
+            reviewDisplay.textContent = data.review;
+            reviewText.value = data.review;
+            reviewCount.textContent = data.review.length;
+        }
+    })
+    .catch(() => showToast('An error occurred', 'danger'));
+});
+</script>
 {% endblock %}

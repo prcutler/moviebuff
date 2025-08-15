@@ -3,52 +3,62 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>
+<section aria-labelledby="watchlist-heading">
+    <h2 id="watchlist-heading" class="mb-4">
         <a href="{% url 'view_all_watchlist' %}">Watchlist</a>
     </h2>
-    <div class="movie-list">
-        {% if watchlist_movies %}
+    {% if watchlist_movies %}
+        <div class="row g-4">
             {% for movie in watchlist_movies|slice:":5" %}
-                {% include 'movies/components/movie_card.html' %}
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    {% include 'movies/components/movie_card.html' %}
+                </div>
             {% endfor %}
-        {% else %}
-            <p>Nothing here, start by making a search!</p>
-        {% endif %}
-    </div>
+        </div>
+    {% else %}
+        <p>Nothing here, start by making a search!</p>
+    {% endif %}
+</section>
 
-    <h2>
+<section aria-labelledby="watched-heading" class="mt-5">
+    <h2 id="watched-heading" class="mb-4">
         <a href="{% url 'view_all_watched' %}">Watched Movies</a>
     </h2>
-    <div class="movie-list">
-        {% if watched_movies %}
+    {% if watched_movies %}
+        <div class="row g-4">
             {% for movie in watched_movies|slice:":5" %}
-                {% include 'movies/components/movie_card.html' %}
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    {% include 'movies/components/movie_card.html' %}
+                </div>
             {% endfor %}
-        {% else %}
-            <p>Nothing here, start by making a search!</p>
-        {% endif %}
-    </div>
+        </div>
+    {% else %}
+        <p>Nothing here, start by making a search!</p>
+    {% endif %}
+</section>
 
-    {% if custom_watchlists %}
-        <h2>Custom Watchlists</h2>
+{% if custom_watchlists %}
+    <section aria-labelledby="custom-watchlists-heading" class="mt-5">
+        <h2 id="custom-watchlists-heading" class="mb-4">Custom Watchlists</h2>
         {% for watchlist in custom_watchlists %}
-            <div class="custom-watchlist-header">
-                <h3>
+            <section aria-labelledby="watchlist-{{ watchlist.id }}-heading" class="mb-4">
+                <h3 id="watchlist-{{ watchlist.id }}-heading">
                     <a href="{% url 'view_custom_watchlist' watchlist.id %}">{{ watchlist.name }}</a>
-                    <a href="{% url 'delete_custom_watchlist' watchlist.id %}" class="delete-icon">🗑️</a>
+                    <a href="{% url 'delete_custom_watchlist' watchlist.id %}" class="ms-2 text-danger">🗑️</a>
                 </h3>
-            </div>
-            <div class="movie-list">
                 {% if watchlist.items.all %}
-                    {% for item in watchlist.items.all|slice:":5" %}
-                        {% include 'movies/components/movie_card.html' %}
-                    {% endfor %}
+                    <div class="row g-4">
+                        {% for item in watchlist.items.all|slice:":5" %}
+                            <div class="col-sm-6 col-md-4 col-lg-3">
+                                {% include 'movies/components/movie_card.html' with movie=item %}
+                            </div>
+                        {% endfor %}
+                    </div>
                 {% else %}
                     <p>Nothing here, start by making a search!</p>
                 {% endif %}
-            </div>
+            </section>
         {% endfor %}
-    {% endif %}
-</div>
+    </section>
+{% endif %}
 {% endblock %}
