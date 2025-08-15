@@ -1,28 +1,32 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ profile_user.username }}'s Profile</title>
-</head>
-<body>
-    <h1>{{ profile_user.username }}'s Profile</h1>
+{% extends 'moviebuff/base.html' %}
+
+{% block title %}{{ profile_user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<section aria-labelledby="profile-title">
+    <h1 id="profile-title" class="mb-4">{{ profile_user.username }}'s Profile</h1>
     <p>Email: {{ profile_user.email }}</p>
+</section>
 
-    <h2>Watched Movies</h2>
-    <ul>
+<section aria-labelledby="watched-title" class="mt-4">
+    <h2 id="watched-title">Watched Movies</h2>
+    <ul class="list-unstyled">
     {% for movie in watched_movies %}
-        <li>
-            <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a> ({{ movie.movie.release_date }})
-        </li>
+        <li><a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a> ({{ movie.movie.release_date }})</li>
+    {% empty %}
+        <li>No watched movies.</li>
     {% endfor %}
     </ul>
+</section>
 
-    <h2>Watchlist</h2>
-    <ul>
+<section aria-labelledby="watchlist-title" class="mt-4">
+    <h2 id="watchlist-title">Watchlist</h2>
+    <ul class="list-unstyled">
     {% for movie in watchlist_movies %}
-        <li>
-            <a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a> ({{ movie.movie.release_date }})
-        </li>
+        <li><a href="{% url 'movie_details' movie.movie.id %}">{{ movie.movie.title }}</a> ({{ movie.movie.release_date }})</li>
+    {% empty %}
+        <li>No movies in watchlist.</li>
     {% endfor %}
     </ul>
-</body>
-</html>
+</section>
+{% endblock %}
