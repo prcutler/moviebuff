@@ -3,16 +3,18 @@
 {% block title %}All Watched Movies{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>All Watched Movies</h2>
-    <div class="movie-list">
-        {% if watched_movies %}
+<section aria-labelledby="watched-heading">
+    <h2 id="watched-heading" class="mb-4">All Watched Movies</h2>
+    {% if watched_movies %}
+        <div class="row g-4">
             {% for movie in watched_movies %}
-                {% include 'movies/components/movie_card.html' %}
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    {% include 'movies/components/movie_card.html' %}
+                </div>
             {% endfor %}
-        {% else %}
-            <p>Nothing here, start by making a search!</p>
-        {% endif %}
-    </div>
-</div>
+        </div>
+    {% else %}
+        <p>Nothing here, start by making a search!</p>
+    {% endif %}
+</section>
 {% endblock %}

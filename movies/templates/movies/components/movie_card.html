@@ -1,5 +1,9 @@
-<div class="movie-item">
+<div class="card h-100">
     <a href="{% url 'movie_details' movie.movie.id %}">
-        <img src="{{ movie.movie.tmdb_poster_path }}" alt="{{ movie.movie.title }}" class="movie-poster">
+        <img src="{{ movie.movie.tmdb_poster_path }}" class="card-img-top" alt="{{ movie.movie.title }}">
     </a>
+    <div class="card-body">
+        <h5 class="card-title">{{ movie.movie.title }}</h5>
+        <p class="card-text">{{ movie.movie.release_date }}</p>
+    </div>
 </div>

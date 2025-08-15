@@ -1,17 +1,18 @@
 {% extends 'moviebuff/base.html' %}
-{% load static %}
 
 {% block title %}Mark as Watched{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <div class="form-container">
-            <h1>Mark {{ movie.title }} as Watched</h1>
-            <form method="post">
+<section aria-labelledby="watched-title">
+    <h1 id="watched-title" class="h2 mb-4">Mark {{ movie.title }} as Watched</h1>
+    <div class="row">
+        <div class="col-md-6">
+            <form method="post" class="mb-3">
                 {% csrf_token %}
                 {{ form.as_p }}
-                <button type="submit">Submit</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </form>
         </div>
     </div>
+</section>
 {% endblock %}

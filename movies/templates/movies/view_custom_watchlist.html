@@ -3,16 +3,18 @@
 {% block title %}{{ custom_watchlist.name }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>{{ custom_watchlist.name }}</h2>
-    <div class="movie-list">
-        {% if custom_watchlist_items %}
+<section aria-labelledby="custom-watchlist-heading">
+    <h2 id="custom-watchlist-heading" class="mb-4">{{ custom_watchlist.name }}</h2>
+    {% if custom_watchlist_items %}
+        <div class="row g-4">
             {% for item in custom_watchlist_items %}
-                {% include 'movies/components/movie_card.html' %}
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    {% include 'movies/components/movie_card.html' with movie=item %}
+                </div>
             {% endfor %}
-        {% else %}
-            <p>Nothing here, start by making a search!</p>
-        {% endif %}
-    </div>
-</div>
+        </div>
+    {% else %}
+        <p>Nothing here, start by making a search!</p>
+    {% endif %}
+</section>
 {% endblock %}
