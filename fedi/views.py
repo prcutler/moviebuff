@@ -3,11 +3,14 @@ from django.contrib.auth import get_user_model
 from django.http import JsonResponse, Http404, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from urllib.parse import urlparse
+from math import ceil
 import json
 import re
 
-from .models import FediFollower
+from .models import FediFollower, FediActivity
 from .utils import HttpSignatureError, post_activity, verify_http_signature
+
+PAGE_SIZE = 10
 
 
 def webfinger(request):
@@ -88,6 +91,122 @@ def actor(request, username):
         },
     }
 
+    return JsonResponse(data, content_type="application/activity+json")
+
+
+def outbox(request, username):
+    """Return a paginated outbox for a local user."""
+    if not settings.ACTIVITYPUB_ENABLED:
+        raise Http404
+
+    accept = request.META.get("HTTP_ACCEPT", "")
+    if "application/activity+json" not in accept and "application/ld+json" not in accept:
+        raise Http404
+
+    User = get_user_model()
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        raise Http404
+
+    profile = user.userprofile
+    if not profile.fedi_enabled:
+        raise Http404
+
+    actor = user.fediactor
+    activities = actor.activities.order_by("-created_at")
+    total = activities.count()
+    page = request.GET.get("page")
+
+    if page:
+        try:
+            page = int(page)
+        except ValueError:
+            raise Http404
+        last_page = max(1, ceil(total / PAGE_SIZE)) if total else 1
+        start = (page - 1) * PAGE_SIZE
+        end = start + PAGE_SIZE
+        items = [a.payload for a in activities[start:end]]
+        data = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "id": f"{actor.outbox_url}?page={page}",
+            "type": "OrderedCollectionPage",
+            "partOf": actor.outbox_url,
+            "orderedItems": items,
+        }
+        if page < last_page:
+            data["next"] = f"{actor.outbox_url}?page={page + 1}"
+        if page > 1:
+            data["prev"] = f"{actor.outbox_url}?page={page - 1}"
+        return JsonResponse(data, content_type="application/activity+json")
+
+    last_page = max(1, ceil(total / PAGE_SIZE)) if total else 1
+    data = {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "id": actor.outbox_url,
+        "type": "OrderedCollection",
+        "totalItems": total,
+        "first": f"{actor.outbox_url}?page=1",
+        "last": f"{actor.outbox_url}?page={last_page}",
+    }
+    return JsonResponse(data, content_type="application/activity+json")
+
+
+def followers(request, username):
+    """Return a paginated followers collection for a local user."""
+    if not settings.ACTIVITYPUB_ENABLED:
+        raise Http404
+
+    accept = request.META.get("HTTP_ACCEPT", "")
+    if "application/activity+json" not in accept and "application/ld+json" not in accept:
+        raise Http404
+
+    User = get_user_model()
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        raise Http404
+
+    profile = user.userprofile
+    if not profile.fedi_enabled:
+        raise Http404
+
+    actor = user.fediactor
+    followers_qs = actor.followers.filter(state=FediFollower.ACCEPTED).order_by("-created_at")
+    total = followers_qs.count()
+    page = request.GET.get("page")
+
+    if page:
+        try:
+            page = int(page)
+        except ValueError:
+            raise Http404
+        last_page = max(1, ceil(total / PAGE_SIZE)) if total else 1
+        start = (page - 1) * PAGE_SIZE
+        end = start + PAGE_SIZE
+        items = [f.remote_actor_id for f in followers_qs[start:end]]
+        data = {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "id": f"{actor.followers_url}?page={page}",
+            "type": "CollectionPage",
+            "partOf": actor.followers_url,
+            "items": items,
+        }
+        if page < last_page:
+            data["next"] = f"{actor.followers_url}?page={page + 1}"
+        if page > 1:
+            data["prev"] = f"{actor.followers_url}?page={page - 1}"
+        return JsonResponse(data, content_type="application/activity+json")
+
+    last_page = max(1, ceil(total / PAGE_SIZE)) if total else 1
+    data = {
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "id": actor.followers_url,
+        "type": "Collection",
+        "totalItems": total,
+        "first": f"{actor.followers_url}?page=1",
+        "last": f"{actor.followers_url}?page={last_page}",
+    }
     return JsonResponse(data, content_type="application/activity+json")
 
 
