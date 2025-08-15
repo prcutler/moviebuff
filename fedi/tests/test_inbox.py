@@ -1,13 +1,16 @@
+import base64
+import hashlib
 import json
 from unittest.mock import patch
+from urllib.parse import urlparse
 
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase, override_settings
 
 from fedi.models import FediFollower
-from fedi.utils import build_signed_headers
+from fedi.utils import build_signed_headers, parse_signature_header
 from fedi.views import inbox
 
 
@@ -86,8 +89,45 @@ class InboxTests(TestCase):
         self.assertEqual(follower.remote_actor_id, self.remote_actor)
         self.assertEqual(follower.state, FediFollower.ACCEPTED)
         mock_post.assert_called_once()
-        sent = json.loads(mock_post.call_args.kwargs["data"])
+        call = mock_post.call_args.kwargs
+        sent = json.loads(call["data"])
         self.assertEqual(sent["type"], "Accept")
+
+        headers = call["headers"]
+        self.assertIn("Date", headers)
+        self.assertIn("Digest", headers)
+        self.assertIn("Host", headers)
+        self.assertIn("Signature", headers)
+        self.assertEqual(headers["Host"], "remote.example")
+
+        expected_digest = "SHA-256=" + base64.b64encode(
+            hashlib.sha256(call["data"]).digest()
+        ).decode()
+        self.assertEqual(headers["Digest"], expected_digest)
+
+        params = parse_signature_header(headers["Signature"])
+        self.assertEqual(params["keyId"], f"{self.actor_id}#main-key")
+        self.assertEqual(
+            params["headers"], "(request-target) host date digest"
+        )
+
+        signed_string = "\n".join(
+            [
+                f"(request-target): post {urlparse(self.remote_inbox).path}",
+                f"host: {headers['Host']}",
+                f"date: {headers['Date']}",
+                f"digest: {headers['Digest']}",
+            ]
+        )
+        public_key = serialization.load_pem_public_key(
+            self.user.fediactor.public_key_pem.encode()
+        )
+        public_key.verify(
+            base64.b64decode(params["signature"]),
+            signed_string.encode(),
+            padding.PKCS1v15(),
+            hashes.SHA256(),
+        )
 
     @patch("fedi.utils.requests.post")
     @patch("fedi.utils.requests.get")
