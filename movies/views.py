@@ -3,6 +3,7 @@ from django.db.models import Avg
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
@@ -17,9 +18,23 @@ def search_movies(request):
     if query:
         tmdb_connector = TMDbConnector(api_key=settings.TMDB_API_KEY)
         results = tmdb_connector.search_movie(query)
-        paginator = Paginator(results, 10) 
+        paginator = Paginator(results, 10)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            html = render_to_string(
+                'movies/components/search_result_cards.html',
+                {'page_obj': page_obj},
+                request=request,
+            )
+            next_url = None
+            if page_obj.has_next():
+                next_url = (
+                    f"{request.path}?page={page_obj.next_page_number}&q={escape(query)}"
+                )
+            return JsonResponse({'html': html, 'next_url': next_url})
+
         return render(request, 'movies/search_results.html', {'page_obj': page_obj, 'query': query})
     return render(request, 'movies/search_results.html')
 
@@ -190,16 +205,65 @@ def delete_custom_watchlist(request, watchlist_id):
 
 def view_all_watched(request):
     watched_movies = Watched.objects.filter(user=request.user).order_by('-watched_date')
-    return render(request, 'movies/view_all_watched.html', {'watched_movies': watched_movies})
+    paginator = Paginator(watched_movies, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string(
+            'movies/components/movie_card_list.html',
+            {'page_obj': page_obj},
+            request=request,
+        )
+        next_url = None
+        if page_obj.has_next():
+            next_url = f"{request.path}?page={page_obj.next_page_number}"
+        return JsonResponse({'html': html, 'next_url': next_url})
+
+    return render(request, 'movies/view_all_watched.html', {'page_obj': page_obj})
 
 def view_all_watchlist(request):
     watchlist_movies = Watchlist.objects.filter(user=request.user).order_by('-added_date')
-    return render(request, 'movies/view_all_watchlist.html', {'watchlist_movies': watchlist_movies})
+    paginator = Paginator(watchlist_movies, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string(
+            'movies/components/movie_card_list.html',
+            {'page_obj': page_obj},
+            request=request,
+        )
+        next_url = None
+        if page_obj.has_next():
+            next_url = f"{request.path}?page={page_obj.next_page_number}"
+        return JsonResponse({'html': html, 'next_url': next_url})
+
+    return render(request, 'movies/view_all_watchlist.html', {'page_obj': page_obj})
 
 def view_custom_watchlist(request, watchlist_id):
     custom_watchlist = get_object_or_404(CustomWatchlist, id=watchlist_id, users=request.user)
     custom_watchlist_items = custom_watchlist.items.all().order_by('-added_date')
-    return render(request, 'movies/view_custom_watchlist.html', {'custom_watchlist': custom_watchlist, 'custom_watchlist_items': custom_watchlist_items})
+    paginator = Paginator(custom_watchlist_items, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string(
+            'movies/components/movie_card_list.html',
+            {'page_obj': page_obj},
+            request=request,
+        )
+        next_url = None
+        if page_obj.has_next():
+            next_url = f"{request.path}?page={page_obj.next_page_number}"
+        return JsonResponse({'html': html, 'next_url': next_url})
+
+    return render(
+        request,
+        'movies/view_custom_watchlist.html',
+        {'custom_watchlist': custom_watchlist, 'page_obj': page_obj},
+    )
 
 def handle_tmdb_redirect(request, tmdb_id):
     movie = Movie.objects.filter(tmdb_id=tmdb_id).first()

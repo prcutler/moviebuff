@@ -1,4 +1,5 @@
 {% extends 'moviebuff/base.html' %}
+{% load static %}
 
 {% block title %}Search Results{% endblock %}
 
@@ -10,37 +11,31 @@
         <button class="btn btn-primary" type="submit">Search</button>
     </form>
     {% if page_obj %}
-        <div class="row g-4">
-            {% for movie in page_obj %}
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="card h-100">
-                        <a href="{% url 'handle_movie_redirect' movie.id %}">
-                            <img src="https://image.tmdb.org/t/p/w600_and_h900_bestv2{{ movie.poster_path }}" class="card-img-top" alt="{{ movie.title }}">
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title"><a href="{% url 'handle_movie_redirect' movie.id %}">{{ movie.title }}</a></h5>
-                            <p class="card-text">{{ movie.release_date }}</p>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
+        <div id="movie-grid" class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 g-lg-4">
+            {% include 'movies/components/search_result_cards.html' %}
         </div>
 
         <nav aria-label="pagination" class="mt-4">
-            <ul class="pagination">
+            <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page=1&q={{ query }}">&laquo; first</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}">previous</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}">&laquo; Previous</a></li>
                 {% endif %}
-
-                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.</span></li>
-
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
                 {% if page_obj.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}">next</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}">last &raquo;</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}">Next &raquo;</a></li>
                 {% endif %}
             </ul>
         </nav>
+
+        {% if page_obj.has_next %}
+            <div class="d-flex justify-content-center">
+                <button id="load-more" class="btn btn-outline-primary" data-next-url="{{ request.path }}?page={{ page_obj.next_page_number }}&q={{ query }}" data-per-page="{{ page_obj.paginator.per_page }}">Charger plus</button>
+            </div>
+        {% endif %}
     {% endif %}
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'movies/load_more.js' %}"></script>
 {% endblock %}
