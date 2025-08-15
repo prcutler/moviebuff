@@ -4,12 +4,43 @@
 
 {% block content %}
 <section aria-labelledby="watched-title">
-    <h1 id="watched-title" class="h2 mb-4">Mark {{ movie.title }} as Watched</h1>
+    <h1 id="watched-title" class="h2 mb-4">Mark {{ movie.title }} as Watched{% if existing %} (Rewatch #{{ existing.rewatch_count }}){% endif %}</h1>
     <div class="row">
         <div class="col-md-6">
             <form method="post" class="mb-3">
                 {% csrf_token %}
-                {{ form.as_p }}
+                <div class="mb-3">
+                    <label for="id_watched_date" class="form-label">Date</label>
+                    {{ form.watched_date|as_widget(attrs={'class': 'form-control'}) }}
+                    {% if form.watched_date.errors %}
+                        <div class="invalid-feedback d-block">{{ form.watched_date.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="id_watched_time" class="form-label">Time</label>
+                    {{ form.watched_time|as_widget(attrs={'class': 'form-control'}) }}
+                    {% if form.watched_time.errors %}
+                        <div class="invalid-feedback d-block">{{ form.watched_time.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="id_rating" class="form-label">Rating</label>
+                    {{ form.rating|as_widget(attrs={'class': 'form-control'}) }}
+                    {% if form.rating.errors %}
+                        <div class="invalid-feedback d-block">{{ form.rating.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="id_review" class="form-label">Review</label>
+                    {{ form.review|as_widget(attrs={'class': 'form-control'}) }}
+                    {% if form.review.errors %}
+                        <div class="invalid-feedback d-block">{{ form.review.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-check mb-3">
+                    {{ form.is_rewatch|as_widget(attrs={'class': 'form-check-input'}) }}
+                    <label for="id_is_rewatch" class="form-check-label">Mark as rewatch</label>
+                </div>
                 <button type="submit" class="btn btn-primary">Submit</button>
             </form>
         </div>
