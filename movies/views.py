@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
+from django.utils.html import escape
 from .models import Movie, Watched, Watchlist, CustomWatchlist, CustomWatchlistItem
 from connectors.tmdb_connector import TMDbConnector
 from django.conf import settings
@@ -213,3 +214,63 @@ def handle_tmdb_redirect(request, tmdb_id):
             tmdb_poster_path="https://image.tmdb.org/t/p/w600_and_h900_bestv2" + movie_data['poster_path']
         )
         return redirect('movie_details', movie_id=movie.id)
+
+
+@login_required
+@require_POST
+def update_rating(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    try:
+        rating = float(request.POST.get('rating'))
+    except (TypeError, ValueError):
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid rating'
+        }, status=400)
+
+    watched, _ = Watched.objects.get_or_create(
+        user=request.user,
+        movie=movie,
+        defaults={'watched_date': timezone.now()}
+    )
+    watched.rating = rating
+    watched.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Rating saved',
+        'rating': rating
+    })
+
+
+@login_required
+@require_POST
+def submit_review(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    review_text = request.POST.get('review', '').strip()
+
+    if not review_text:
+        return JsonResponse({
+            'success': False,
+            'message': 'Review cannot be empty'
+        }, status=400)
+
+    if len(review_text) > 300:
+        return JsonResponse({
+            'success': False,
+            'message': 'Review too long'
+        }, status=400)
+
+    watched, _ = Watched.objects.get_or_create(
+        user=request.user,
+        movie=movie,
+        defaults={'watched_date': timezone.now()}
+    )
+    watched.review = escape(review_text)
+    watched.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Review saved',
+        'review': watched.review
+    })

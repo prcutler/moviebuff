@@ -53,13 +53,29 @@
                 <h3 id="user-data-title">User Data</h3>
                 {% if is_watched %}
                     <p><strong>Watched Date:</strong> {{ watched_entry.watched_date }}</p>
-                    {% if watched_entry.rating is not None %}
-                        <p><strong>Rating:</strong> {{ watched_entry.rating }}/5</p>
-                    {% endif %}
-                    {% if watched_entry.review %}
-                        <p><strong>Review:</strong> {{ watched_entry.review }}</p>
-                    {% endif %}
                 {% endif %}
+
+                <form id="rating-form" data-url="{% url 'update_rating' movie.id %}" class="mb-3">
+                    <fieldset class="border-0 p-0 m-0">
+                        <legend>Your rating: <span id="current-rating">{% if watched_entry.rating is not None %}{{ watched_entry.rating }}/5{% else %}Not rated{% endif %}</span></legend>
+                        <div class="d-flex rating">
+                            {% for i in "12345" %}
+                                <input type="radio" class="visually-hidden" name="rating" id="rating-{{ i }}" value="{{ i }}" {% if watched_entry.rating|floatformat:'0' == i %}checked{% endif %}>
+                                <label for="rating-{{ i }}" class="star" aria-label="{{ i }} star{% if i != '1' %}s{% endif %}"><i class="bi {% if watched_entry.rating|default:0|float >= i|float %}bi-star-fill{% else %}bi-star{% endif %}">★</i></label>
+                            {% endfor %}
+                        </div>
+                    </fieldset>
+                </form>
+
+                <form id="review-form" data-url="{% url 'submit_review' movie.id %}" class="mb-3">
+                    <div class="mb-2">
+                        <label for="review-text" class="form-label">Your Review</label>
+                        <textarea id="review-text" name="review" class="form-control" maxlength="300" rows="3">{{ watched_entry.review }}</textarea>
+                        <div class="form-text text-end"><span id="review-count">0</span>/300</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Review</button>
+                </form>
+                <div id="current-review" class="mt-2">{{ watched_entry.review }}</div>
 
                 <button id="watched-toggle" class="btn btn-primary btn-sm" data-url="{% url 'toggle_watched' movie.id %}">
                     {% if is_watched %}Remove from Watched{% else %}Add to Watched{% endif %}
@@ -88,6 +104,12 @@
 
 {% block scripts %}
 <div id="csrf-token" style="display:none;">{% csrf_token %}</div>
+<style>
+.rating label { cursor:pointer; }
+.rating .bi-star, .rating .bi-star-fill { font-size:1.5rem; }
+.rating .bi-star { color:#ccc; }
+.rating .bi-star-fill { color:#f5c518; }
+</style>
 <script>
 const csrftoken = document.querySelector('#csrf-token input').value;
 
@@ -136,6 +158,93 @@ document.getElementById('watchlist-toggle').addEventListener('click', function()
 });
 document.getElementById('watched-toggle').addEventListener('click', function() {
     handleToggle(this);
+});
+
+// Rating functionality
+const ratingForm = document.getElementById('rating-form');
+const ratingInputs = ratingForm.querySelectorAll('input[name="rating"]');
+let currentRating = ratingForm.querySelector('input:checked')?.value || 0;
+const starLabels = ratingForm.querySelectorAll('label.star');
+
+function highlightStars(value) {
+    starLabels.forEach((label, index) => {
+        const icon = label.querySelector('i');
+        if (index < value) {
+            icon.classList.add('bi-star-fill');
+            icon.classList.remove('bi-star');
+        } else {
+            icon.classList.add('bi-star');
+            icon.classList.remove('bi-star-fill');
+        }
+    });
+}
+
+ratingInputs.forEach(input => {
+    ['change', 'focus', 'mouseover'].forEach(evt => {
+        input.addEventListener(evt, () => highlightStars(input.value));
+    });
+
+    input.addEventListener('change', () => {
+        const value = input.value;
+        fetch(ratingForm.dataset.url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({rating: value})
+        })
+        .then(res => res.json())
+        .then(data => {
+            showToast(data.message, data.success ? 'success' : 'danger');
+            if (data.success) {
+                currentRating = value;
+                document.getElementById('current-rating').textContent = `${value}/5`;
+            }
+        })
+        .catch(() => showToast('An error occurred', 'danger'));
+    });
+});
+
+ratingForm.addEventListener('mouseleave', () => highlightStars(currentRating));
+highlightStars(currentRating);
+
+// Review functionality
+const reviewForm = document.getElementById('review-form');
+const reviewText = document.getElementById('review-text');
+const reviewCount = document.getElementById('review-count');
+const reviewDisplay = document.getElementById('current-review');
+
+reviewCount.textContent = reviewText.value.length;
+reviewText.addEventListener('input', () => {
+    reviewCount.textContent = reviewText.value.length;
+});
+
+reviewForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = reviewText.value.trim();
+    if (!text) {
+        showToast('Review cannot be empty', 'danger');
+        return;
+    }
+    fetch(reviewForm.dataset.url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({review: text})
+    })
+    .then(res => res.json())
+    .then(data => {
+        showToast(data.message, data.success ? 'success' : 'danger');
+        if (data.success) {
+            reviewDisplay.textContent = data.review;
+            reviewText.value = data.review;
+            reviewCount.textContent = data.review.length;
+        }
+    })
+    .catch(() => showToast('An error occurred', 'danger'));
 });
 </script>
 {% endblock %}
