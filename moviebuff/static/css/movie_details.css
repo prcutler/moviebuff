@@ -1,3 +1,5 @@
+/* styles.css */
+
 .movie-details-container {
     display: flex;
     gap: 20px;
@@ -36,4 +38,20 @@
 
 .external-data p, .user-data p, .reviews-section p {
     margin: 10px 0;
+}
+
+/* Media Query for Mobile Devices */
+@media (max-width: 768px) {
+    .movie-details-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .main-content, .secondary-content {
+        width: 100%;
+    }
+
+    .movie-card, .reviews-section, .external-data, .user-data {
+        width: 100%;
+    }
 }

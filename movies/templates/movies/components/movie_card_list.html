@@ -1,0 +1,5 @@
+{% for movie in page_obj %}
+    <div class="col">
+        {% include 'movies/components/movie_card.html' %}
+    </div>
+{% endfor %}

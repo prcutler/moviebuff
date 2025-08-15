@@ -1,3 +1,5 @@
+/* styles.css */
+
 .movie-list {
     display: flex;
     flex-wrap: wrap;
@@ -32,4 +34,16 @@
 .movie-details p {
     font-size: 1em;
     color: #777;
+}
+
+/* Media Query for Mobile Devices */
+@media (max-width: 768px) {
+    .movie-item {
+        width: 45%; /* Adjust width to fit two items per row */
+        margin-bottom: 20px;
+    }
+
+    .movie-item:nth-child(n+5) {
+        display: none; /* Hide items beyond the 4th */
+    }
 }

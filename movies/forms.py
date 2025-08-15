@@ -1,33 +1,68 @@
+import datetime
+
 from django import forms
+from django.utils import timezone
+
 from .models import Watched, CustomWatchlist
 
+
 class WatchedForm(forms.ModelForm):
+    watched_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    watched_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time'}), required=False
+    )
+    is_rewatch = forms.BooleanField(required=False, label="Mark as rewatch")
+
     class Meta:
         model = Watched
-        fields = ['watched_date', 'rating', 'review']
+        fields = ['watched_date', 'watched_time', 'rating', 'review', 'is_rewatch']
         widgets = {
-            'watched_date': forms.DateInput(attrs={'type': 'date'}),
             'rating': forms.NumberInput(attrs={'step': 0.5, 'min': 0, 'max': 5}),
             'review': forms.Textarea(attrs={'maxlength': 300}),
         }
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        date = self.cleaned_data['watched_date']
+        time_val = self.cleaned_data.get('watched_time') or datetime.time(0, 0)
+        combined = datetime.datetime.combine(date, time_val)
+        instance.watched_date = timezone.make_aware(combined)
+        if commit:
+            instance.save()
+        return instance
+
+
 class WatchlistForm(forms.Form):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
-        super(WatchlistForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         choices = [('default', 'Default Watchlist')]
-
         if user:
             custom_watchlists = CustomWatchlist.objects.filter(users=user)
             if custom_watchlists.exists():
-                choices.extend([(watchlist.id, watchlist.name) for watchlist in custom_watchlists])
+                choices.extend(
+                    [(watchlist.id, watchlist.name) for watchlist in custom_watchlists]
+                )
 
         choices.append(('new', 'New Custom Watchlist'))
 
-        self.fields['watchlist'] = forms.ChoiceField(choices=choices, label="Select Watchlist")
-        self.fields['new_watchlist_name'] = forms.CharField(max_length=255, required=False, label="New Watchlist Name", widget=forms.TextInput(attrs={'placeholder': 'Enter new watchlist name'}))
-        self.fields['new_watchlist_description'] = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Enter new watchlist description'}), required=False, label="New Watchlist Description")
+        self.fields['watchlist'] = forms.ChoiceField(
+            choices=choices, label="Select Watchlist"
+        )
+        self.fields['new_watchlist_name'] = forms.CharField(
+            max_length=255,
+            required=False,
+            label="New Watchlist Name",
+            widget=forms.TextInput(attrs={'placeholder': 'Enter new watchlist name'}),
+        )
+        self.fields['new_watchlist_description'] = forms.CharField(
+            widget=forms.Textarea(
+                attrs={'placeholder': 'Enter new watchlist description'}
+            ),
+            required=False,
+            label="New Watchlist Description",
+        )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -39,3 +74,4 @@ class WatchlistForm(forms.Form):
                 raise forms.ValidationError("New watchlist name is required.")
 
         return cleaned_data
+

@@ -1,0 +1,77 @@
+.list-movie-results {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.list-movie-result-item {
+    display: flex;
+    align-items: flex-start;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    background-color: #fff;
+}
+
+.list-movie-poster {
+    width: 100px;
+    height: auto;
+    margin-right: 20px;
+    border-radius: 5px;
+}
+
+.list-movie-details {
+    flex: 1;
+}
+
+.list-movie-details h3 {
+    margin: 0;
+    font-size: 1.5em;
+    color: #333;
+}
+
+.list-movie-details a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.list-movie-details p {
+    margin: 5px 0;
+    font-size: 1em;
+    color: #777;
+}
+
+.list-release-date {
+    font-style: italic;
+}
+
+.list-alternative-titles {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.list-director {
+    font-weight: bold;
+}
+
+.list-pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.list-pagination .list-step-links a {
+    margin: 0 5px;
+    text-decoration: none;
+    color: #007bff;
+}
+
+.list-pagination .list-step-links a:hover {
+    text-decoration: underline;
+}
+
+.list-pagination .list-current {
+    font-weight: bold;
+    margin: 0 10px;
+}

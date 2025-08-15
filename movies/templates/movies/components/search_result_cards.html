@@ -1,0 +1,15 @@
+{% for movie in page_obj %}
+    <div class="col">
+        <div class="card h-100">
+            <a href="{% url 'handle_movie_redirect' movie.id %}">
+                <div class="ratio" style="--bs-aspect-ratio: 150%;">
+                    <img src="https://image.tmdb.org/t/p/w600_and_h900_bestv2{{ movie.poster_path }}" class="img-fluid position-absolute top-0 start-0 w-100 h-100 object-fit-cover" alt="{{ movie.title }} poster" loading="lazy" width="400" height="600">
+                </div>
+            </a>
+            <div class="card-body">
+                <h5 class="card-title"><a href="{% url 'handle_movie_redirect' movie.id %}">{{ movie.title }}</a></h5>
+                <p class="card-text">{{ movie.release_date }}</p>
+            </div>
+        </div>
+    </div>
+{% endfor %}
