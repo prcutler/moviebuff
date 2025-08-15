@@ -59,9 +59,9 @@
                     <fieldset class="border-0 p-0 m-0">
                         <legend>Your rating: <span id="current-rating">{% if watched_entry.rating is not None %}{{ watched_entry.rating }}/5{% else %}Not rated{% endif %}</span></legend>
                         <div class="d-flex rating">
-                            {% for i in "12345" %}
-                                <input type="radio" class="visually-hidden" name="rating" id="rating-{{ i }}" value="{{ i }}" {% if watched_entry.rating|floatformat:'0' == i %}checked{% endif %}>
-                                <label for="rating-{{ i }}" class="star" aria-label="{{ i }} star{% if i != '1' %}s{% endif %}"><i class="bi {% if watched_entry.rating|default:0|float >= i|float %}bi-star-fill{% else %}bi-star{% endif %}">★</i></label>
+                            {% for _ in "12345" %}
+                                <input type="radio" class="visually-hidden" name="rating" id="rating-{{ forloop.counter }}" value="{{ forloop.counter }}" {% if user_rating == forloop.counter %}checked{% endif %}>
+                                <label for="rating-{{ forloop.counter }}" class="star" aria-label="{{ forloop.counter }} star{% if forloop.counter != 1 %}s{% endif %}"><i class="bi {% if user_rating >= forloop.counter %}bi-star-fill{% else %}bi-star{% endif %}">★</i></label>
                             {% endfor %}
                         </div>
                     </fieldset>
