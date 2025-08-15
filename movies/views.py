@@ -143,19 +143,29 @@ def toggle_watched(request, movie_id):
 
 def add_to_watched(request, movie_id):
     movie = get_object_or_404(Movie, id=movie_id)
+    existing = Watched.objects.filter(user=request.user, movie=movie).first()
     if request.method == 'POST':
         form = WatchedForm(request.POST)
         if form.is_valid():
-            watched = form.save(commit=False)
-            watched.user = request.user
-            watched.movie = movie
-            watched.save()
+            is_rewatch = form.cleaned_data.get('is_rewatch')
+            instance = form.save(commit=False)
+            if existing:
+                if is_rewatch:
+                    existing.rewatch_count += 1
+                existing.watched_date = instance.watched_date
+                existing.rating = form.cleaned_data.get('rating')
+                existing.review = form.cleaned_data.get('review')
+                existing.save()
+            else:
+                instance.user = request.user
+                instance.movie = movie
+                instance.save()
 
             return redirect('dashboard')
     else:
         form = WatchedForm()
 
-    return render(request, 'movies/add_to_watched.html', {'form': form, 'movie': movie})
+    return render(request, 'movies/add_to_watched.html', {'form': form, 'movie': movie, 'existing': existing})
 
 def add_to_watchlist(request, movie_id):
     movie = get_object_or_404(Movie, id=movie_id)

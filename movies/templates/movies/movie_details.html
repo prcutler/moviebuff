@@ -7,7 +7,7 @@
     <div class="row">
         <div class="col-md-8">
             <div class="card mb-4">
-                <img src="{{ movie.tmdb_poster_path }}" class="card-img-top" alt="{{ movie.title }}">
+                <img src="{{ movie.tmdb_poster_path }}" class="card-img-top" alt="{{ movie.title }} poster">
                 <div class="card-body">
                     <h2 id="movie-title" class="card-title">{{ movie.title }}</h2>
                     <p class="card-text"><strong>Overview:</strong> {{ movie.overview }}</p>
@@ -27,7 +27,7 @@
                     {% for review in other_reviews %}
                         {% if review.review %}
                             <div class="border rounded p-3 mb-3">
-                                <p><strong>{{ review.user.username }}</strong> ({{ review.watched_date }})</p>
+                                <p><strong>{{ review.user.username }}</strong> ({{ review.watched_date|date:"d/m/Y H:i" }})</p>
                                 {% if review.rating is not None %}
                                     <p><strong>Rating:</strong> {{ review.rating }}/5</p>
                                 {% endif %}
@@ -52,7 +52,7 @@
             <section aria-labelledby="user-data-title">
                 <h3 id="user-data-title">User Data</h3>
                 {% if is_watched %}
-                    <p><strong>Watched Date:</strong> {{ watched_entry.watched_date }}</p>
+                    <p><strong>Watched Date:</strong> {{ watched_entry.watched_date|date:"d/m/Y H:i" }}{% if watched_entry.rewatch_count > 1 %} (Rewatch #{{ watched_entry.rewatch_count }}){% endif %}</p>
                 {% endif %}
 
                 <form id="rating-form" data-url="{% url 'update_rating' movie.id %}" class="mb-3">
@@ -117,8 +117,8 @@ function showToast(message, type) {
     const container = document.querySelector('.toast-container');
     const toastEl = document.createElement('div');
     toastEl.className = `toast align-items-center text-bg-${type} border-0`;
-    toastEl.setAttribute('role', 'alert');
-    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('role', 'status');
+    toastEl.setAttribute('aria-live', 'polite');
     toastEl.setAttribute('aria-atomic', 'true');
     toastEl.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
     container.appendChild(toastEl);
