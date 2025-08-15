@@ -1,6 +1,8 @@
 <div class="card h-100">
     <a href="{% url 'movie_details' movie.movie.id %}">
-        <img src="{{ movie.movie.tmdb_poster_path }}" class="card-img-top" alt="{{ movie.movie.title }}">
+        <div class="ratio" style="--bs-aspect-ratio: 150%;">
+            <img src="{{ movie.movie.tmdb_poster_path }}" class="img-fluid position-absolute top-0 start-0 w-100 h-100 object-fit-cover" alt="{{ movie.movie.title }}" loading="lazy" width="400" height="600">
+        </div>
     </a>
     <div class="card-body">
         <h5 class="card-title">{{ movie.movie.title }}</h5>

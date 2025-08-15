@@ -1,20 +1,39 @@
 {% extends 'moviebuff/base.html' %}
+{% load static %}
 
 {% block title %}All Watchlist Movies{% endblock %}
 
 {% block content %}
 <section aria-labelledby="watchlist-heading">
     <h2 id="watchlist-heading" class="mb-4">All Watchlist Movies</h2>
-    {% if watchlist_movies %}
-        <div class="row g-4">
-            {% for movie in watchlist_movies %}
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    {% include 'movies/components/movie_card.html' %}
-                </div>
-            {% endfor %}
+    {% if page_obj %}
+        <div id="movie-grid" class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 g-lg-4">
+            {% include 'movies/components/movie_card_list.html' %}
         </div>
+
+        <nav aria-label="pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo; Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next &raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        {% if page_obj.has_next %}
+            <div class="d-flex justify-content-center">
+                <button id="load-more" class="btn btn-outline-primary" data-next-url="{{ request.path }}?page={{ page_obj.next_page_number }}" data-per-page="{{ page_obj.paginator.per_page }}">Charger plus</button>
+            </div>
+        {% endif %}
     {% else %}
         <p>Nothing here, start by making a search!</p>
     {% endif %}
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'movies/load_more.js' %}"></script>
 {% endblock %}
