@@ -176,3 +176,4 @@ cython_debug/
 # Moviebuff
 settings.py
 moviebuff/settings.py
+/moviebuff/settings.py
