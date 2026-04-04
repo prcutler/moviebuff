@@ -1,4 +1,5 @@
 import time
+import uuid
 from django.db.models import Avg
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
@@ -350,3 +351,64 @@ def submit_review(request, movie_id):
         'message': 'Review saved',
         'review': watched.review
     })
+
+
+@require_POST
+@login_required
+def share_to_fediverse(request, movie_id):
+    if not settings.ACTIVITYPUB_ENABLED:
+        return JsonResponse({'success': False, 'message': 'Federation is disabled'}, status=403)
+
+    profile = getattr(request.user, 'userprofile', None)
+    if not profile or not profile.fedi_enabled:
+        return JsonResponse({'success': False, 'message': 'Fediverse sharing is not enabled for your account'}, status=403)
+
+    movie = get_object_or_404(Movie, id=movie_id)
+
+    try:
+        watched = Watched.objects.get(user=request.user, movie=movie)
+    except Watched.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'You have not watched this movie'}, status=400)
+
+    if watched.rating is None:
+        return JsonResponse({'success': False, 'message': 'Rate the movie before sharing'}, status=400)
+
+    stars = '★' * int(watched.rating) + '☆' * (5 - int(watched.rating))
+    content = f'I just watched {escape(movie.title)} and gave it {stars}'
+
+    from fedi.models import FediActivity, FediDelivery, FediFollower
+    actor = request.user.fediactor
+    base = settings.ACTIVITYPUB_DOMAIN.rstrip('/')
+    activity_id = f'{base}/activities/{uuid.uuid4()}'
+    note_id = f'{activity_id}/note'
+    public = 'https://www.w3.org/ns/activitystreams#Public'
+    movie_url = f'{base}/movies/details/{movie.id}'
+    note = {
+        'id': note_id,
+        'type': 'Note',
+        'attributedTo': actor.actor_id,
+        'to': [public],
+        'cc': [actor.followers_url],
+        'content': content,
+        'url': movie_url,
+    }
+    if movie.tmdb_poster_path:
+        note['attachment'] = [{'type': 'Image', 'url': movie.tmdb_poster_path}]
+
+    payload = {
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        'id': activity_id,
+        'type': 'Create',
+        'actor': actor.actor_id,
+        'to': [public],
+        'cc': [actor.followers_url],
+        'object': note,
+    }
+    activity = FediActivity.objects.create(
+        actor=actor, ap_id=activity_id, type='Create', payload=payload
+    )
+    followers = actor.followers.filter(state=FediFollower.ACCEPTED)
+    for follower in followers:
+        FediDelivery.objects.create(activity=activity, follower=follower)
+
+    return JsonResponse({'success': True, 'message': 'Shared to your Fediverse followers'})

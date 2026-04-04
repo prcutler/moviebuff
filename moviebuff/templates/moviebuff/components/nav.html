@@ -10,6 +10,9 @@
                         <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Dashboard</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'user_profile' %}active{% endif %}" href="{% url 'user_profile' user.username %}">Profile</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'search_movies' %}active{% endif %}" href="{% url 'search_movies' %}">Search</a>
                     </li>
                 {% else %}

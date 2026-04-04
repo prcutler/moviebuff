@@ -77,13 +77,22 @@
                 </form>
                 <div id="current-review" class="mt-2">{{ watched_entry.review }}</div>
 
-                <button id="watched-toggle" class="btn btn-primary btn-sm" data-url="{% url 'toggle_watched' movie.id %}">
-                    {% if is_watched %}Remove from Watched{% else %}Add to Watched{% endif %}
-                </button>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <button id="watched-toggle" class="btn btn-primary btn-sm" data-url="{% url 'toggle_watched' movie.id %}">
+                        {% if is_watched %}Remove from Watched{% else %}Add to Watched{% endif %}
+                    </button>
 
-                <button id="watchlist-toggle" class="btn btn-secondary btn-sm ms-2" data-url="{% url 'toggle_watchlist' movie.id %}">
-                    {% if is_in_watchlist %}Remove from Watchlist{% else %}Add to Watchlist{% endif %}
-                </button>
+                    <button id="watchlist-toggle" class="btn btn-secondary btn-sm" data-url="{% url 'toggle_watchlist' movie.id %}">
+                        {% if is_in_watchlist %}Remove from Watchlist{% else %}Add to Watchlist{% endif %}
+                    </button>
+
+                    {% if is_watched and watched_entry.rating is not None %}
+                    <button id="share-btn" class="btn btn-primary btn-sm"
+                            data-url="{% url 'share_to_fediverse' movie.id %}">
+                        Share to Fediverse
+                    </button>
+                    {% endif %}
+                </div>
 
                 {% if custom_watchlists %}
                     <h4 class="mt-3">Custom Watchlists:</h4>
@@ -219,6 +228,22 @@ reviewCount.textContent = reviewText.value.length;
 reviewText.addEventListener('input', () => {
     reviewCount.textContent = reviewText.value.length;
 });
+
+const shareBtn = document.getElementById('share-btn');
+if (shareBtn) {
+    shareBtn.addEventListener('click', function() {
+        if (this.disabled) return;
+        this.disabled = true;
+        fetch(this.dataset.url, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json'},
+        })
+        .then(res => res.json())
+        .then(data => showToast(data.message, data.success ? 'success' : 'danger'))
+        .catch(() => showToast('An error occurred', 'danger'))
+        .finally(() => { this.disabled = false; });
+    });
+}
 
 reviewForm.addEventListener('submit', (e) => {
     e.preventDefault();
