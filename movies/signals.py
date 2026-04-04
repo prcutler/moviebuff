@@ -50,19 +50,19 @@ def _create_note(user, content, url=None, attachment_url=None):
         FediDelivery.objects.create(activity=activity, follower=follower)
 
 
-@receiver(post_save, sender=Watchlist)
-def watchlist_added(sender, instance, created, **kwargs):
-    if not created:
-        return
-    movie = instance.movie
-    url = f"{settings.ACTIVITYPUB_DOMAIN.rstrip('/')}/movies/details/{movie.id}"
-    content = f"added {movie.title} to watchlist"
-    _create_note(
-        instance.user,
-        content,
-        url=url,
-        attachment_url=movie.tmdb_poster_path,
-    )
+# @receiver(post_save, sender=Watchlist)
+# def watchlist_added(sender, instance, created, **kwargs):
+#     if not created:
+#         return
+#     movie = instance.movie
+#     url = f"{settings.ACTIVITYPUB_DOMAIN.rstrip('/')}/movies/details/{movie.id}"
+#     content = f"added {movie.title} to watchlist"
+#     _create_note(
+#         instance.user,
+#         content,
+#         url=url,
+#         attachment_url=movie.tmdb_poster_path,
+#     )
 
 
 @receiver(pre_save, sender=Watched)

@@ -1,0 +1,6 @@
+{% if show %}
+<button id="share-btn" class="btn btn-primary btn-sm"
+        data-url="{% url 'share_to_fediverse' movie.id %}">
+    Share to Fediverse
+</button>
+{% endif %}

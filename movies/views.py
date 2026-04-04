@@ -353,6 +353,20 @@ def submit_review(request, movie_id):
     })
 
 
+@login_required
+def share_button_partial(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    try:
+        watched = Watched.objects.get(user=request.user, movie=movie)
+    except Watched.DoesNotExist:
+        watched = None
+    show = watched is not None and watched.rating is not None
+    return render(request, 'movies/partials/share_button.html', {
+        'movie': movie,
+        'show': show,
+    })
+
+
 @require_POST
 @login_required
 def share_to_fediverse(request, movie_id):

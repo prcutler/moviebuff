@@ -9,7 +9,12 @@ from .forms import RegisterForm
 from movies.models import Watched, Watchlist, CustomWatchlist
 
 def home(request):
-    return render(request, "users/home.html")
+    random_movies = (
+        Watched.objects.select_related("movie")
+        .exclude(movie__tmdb_poster_path="")
+        .order_by("?")[:4]
+    )
+    return render(request, "users/home.html", {"random_movies": random_movies})
 
 def register(request):
     if request.method == "POST":

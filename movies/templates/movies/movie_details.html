@@ -27,7 +27,7 @@
                     {% for review in other_reviews %}
                         {% if review.review %}
                             <div class="border rounded p-3 mb-3">
-                                <p><strong>{{ review.user.username }}</strong> ({{ review.watched_date|date:"d/m/Y H:i" }})</p>
+                                <p><strong>{{ review.user.username }}</strong> ({{ review.watched_date|date:"m/d/Y H:i" }})</p>
                                 {% if review.rating is not None %}
                                     <p><strong>Rating:</strong> {{ review.rating }}/5</p>
                                 {% endif %}
@@ -52,7 +52,7 @@
             <section aria-labelledby="user-data-title">
                 <h3 id="user-data-title">User Data</h3>
                 {% if is_watched %}
-                    <p><strong>Watched Date:</strong> {{ watched_entry.watched_date|date:"d/m/Y H:i" }}{% if watched_entry.rewatch_count > 1 %} (Rewatch #{{ watched_entry.rewatch_count }}){% endif %}</p>
+                    <p><strong>Watched Date:</strong> {{ watched_entry.watched_date|date:"m/d/Y H:i" }}{% if watched_entry.rewatch_count > 1 %} (Rewatch #{{ watched_entry.rewatch_count }}){% endif %}</p>
                 {% endif %}
 
                 <form id="rating-form" data-url="{% url 'update_rating' movie.id %}" class="mb-3">
@@ -86,12 +86,11 @@
                         {% if is_in_watchlist %}Remove from Watchlist{% else %}Add to Watchlist{% endif %}
                     </button>
 
-                    {% if is_watched and watched_entry.rating is not None %}
-                    <button id="share-btn" class="btn btn-primary btn-sm"
-                            data-url="{% url 'share_to_fediverse' movie.id %}">
-                        Share to Fediverse
-                    </button>
-                    {% endif %}
+                    <div id="share-container"
+                         hx-get="{% url 'share_button_partial' movie.id %}"
+                         hx-trigger="load"
+                         hx-swap="innerHTML">
+                    </div>
                 </div>
 
                 {% if custom_watchlists %}
@@ -209,6 +208,7 @@ ratingInputs.forEach(input => {
             if (data.success) {
                 currentRating = value;
                 document.getElementById('current-rating').textContent = `${value}/5`;
+                htmx.ajax('GET', '{% url "share_button_partial" movie.id %}', {target: '#share-container', swap: 'innerHTML'});
             }
         })
         .catch(() => showToast('An error occurred', 'danger'));
@@ -229,21 +229,19 @@ reviewText.addEventListener('input', () => {
     reviewCount.textContent = reviewText.value.length;
 });
 
-const shareBtn = document.getElementById('share-btn');
-if (shareBtn) {
-    shareBtn.addEventListener('click', function() {
-        if (this.disabled) return;
-        this.disabled = true;
-        fetch(this.dataset.url, {
-            method: 'POST',
-            headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json'},
-        })
-        .then(res => res.json())
-        .then(data => showToast(data.message, data.success ? 'success' : 'danger'))
-        .catch(() => showToast('An error occurred', 'danger'))
-        .finally(() => { this.disabled = false; });
-    });
-}
+document.getElementById('share-container').addEventListener('click', function(e) {
+    const btn = e.target.closest('#share-btn');
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    fetch(btn.dataset.url, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json'},
+    })
+    .then(res => res.json())
+    .then(data => showToast(data.message, data.success ? 'success' : 'danger'))
+    .catch(() => showToast('An error occurred', 'danger'))
+    .finally(() => { btn.disabled = false; });
+});
 
 reviewForm.addEventListener('submit', (e) => {
     e.preventDefault();

@@ -1,19 +1,29 @@
 {% extends 'moviebuff/base.html' %}
-{% load i18n %}
 
-{% block title %}{% trans "Home" %}{% endblock %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
 <section aria-labelledby="home-title">
-    <h1 id="home-title" class="mb-4">{% trans "Welcome to MovieBuff!" %}</h1>
-    <div class="mb-3">
-        <p><strong>{% trans "Disclaimer:" %}</strong> {% trans "This server is intended for demonstration and development purposes only. It runs the latest commits from the development branch, which may include experimental features and changes. Please be aware that data on this server may be reset or deleted at any time without prior notice. Do not use this server for storing critical or sensitive information." %}</p>
-        <p>{% trans "For more information, please visit the" %} <a href="https://codeberg.org/retiolus/moviebuff" target="_blank">{% trans "Codeberg repository" %}</a>.</p>
+    <h1 id="home-title" class="mb-4">Welcome to MovieBuff!</h1>
+    <p>Welcome to Paul Cutler's movie collection.</p>
+    <p>This is a personal collection tracking action, drama, sci-fi, and classic movies — the genres that never get old.</p>
+    {% if random_movies %}
+    <div class="row row-cols-2 row-cols-md-4 g-3 my-4">
+        {% for entry in random_movies %}
+        <div class="col">
+            <a href="{% url 'movie_details' entry.movie.id %}">
+                <img src="{{ entry.movie.tmdb_poster_path }}" class="img-fluid rounded shadow-sm" alt="{{ entry.movie.title }}">
+            </a>
+        </div>
+        {% endfor %}
     </div>
+    {% endif %}
+
     {% if user.is_authenticated %}
-        <p>{% trans "Hello" %}, {{ user.username }}! {% trans "Access your" %} <a href="{% url 'dashboard' %}">{% trans "dashboard" %}</a>.</p>
+        <p>Hello, {{ user.username }}! Access your <a href="{% url 'dashboard' %}">dashboard</a>.</p>
     {% else %}
-        <p>{% trans "Please" %} <a href="{% url 'login' %}">{% trans "log in" %}</a> {% trans "or" %} <a href="{% url 'register' %}">{% trans "create an account" %}</a>.</p>
+        <p>Please <a href="{% url 'login' %}">log in</a>.</p>
+        {# or <a href="{% url 'register' %}">create an account</a> #}
     {% endif %}
 </section>
 {% endblock %}
