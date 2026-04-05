@@ -405,7 +405,7 @@ def share_to_fediverse(request, movie_id):
     actor = request.user.fediactor
     base = settings.ACTIVITYPUB_DOMAIN.rstrip('/')
     activity_id = f'{base}/activities/{uuid.uuid4()}'
-    note_id = f'{activity_id}/note'
+    note_id = activity_id
     public = 'https://www.w3.org/ns/activitystreams#Public'
     movie_url = f'{base}/movies/details/{movie.id}'
     note = {

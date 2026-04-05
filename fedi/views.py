@@ -221,6 +221,19 @@ def followers(request, username):
     return JsonResponse(data, content_type="application/activity+json")
 
 
+def activity_detail(request, activity_uuid):
+    """Serve a single ActivityPub activity/note by UUID so remote servers can fetch it."""
+    if not settings.ACTIVITYPUB_ENABLED:
+        raise Http404
+    base = settings.ACTIVITYPUB_DOMAIN.rstrip("/")
+    ap_id = f"{base}/activities/{activity_uuid}"
+    try:
+        activity = FediActivity.objects.get(ap_id=ap_id)
+    except FediActivity.DoesNotExist:
+        raise Http404
+    return JsonResponse(activity.payload, content_type="application/activity+json")
+
+
 @csrf_exempt
 def inbox(request, username):
     """Handle incoming activities for a local user."""

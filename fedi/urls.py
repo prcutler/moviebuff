@@ -9,5 +9,6 @@ urlpatterns = [
     path("users/<str:username>/outbox", views.outbox, name="outbox"),
     path("users/<str:username>/followers", views.followers, name="followers"),
     path("users/<str:username>/inbox", views.inbox, name="inbox"),
+    path("activities/<uuid:activity_uuid>", views.activity_detail, name="activity_detail"),
 ]
 

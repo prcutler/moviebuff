@@ -24,7 +24,7 @@ def _create_note(user, content, url=None, attachment_url=None):
     actor = user.fediactor
     base = settings.ACTIVITYPUB_DOMAIN.rstrip("/")
     activity_id = f"{base}/activities/{uuid.uuid4()}"
-    note_id = f"{activity_id}/note"
+    note_id = activity_id
     note = {
         "id": note_id,
         "type": "Note",
