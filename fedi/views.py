@@ -259,6 +259,7 @@ def inbox(request, username):
             )
             follower.state = FediFollower.ACCEPTED
             follower.save()
+            logger.info("Saved follower: %s state=%s", follower.remote_actor_id, follower.state)
             accept = {
                 "@context": "https://www.w3.org/ns/activitystreams",
                 "type": "Accept",
@@ -266,7 +267,11 @@ def inbox(request, username):
                 "object": activity,
             }
             if inbox_url:
-                post_activity(actor, inbox_url, accept)
+                try:
+                    post_activity(actor, inbox_url, accept)
+                    logger.info("Sent Accept to %s", inbox_url)
+                except Exception as e:
+                    logger.error("Failed to send Accept to %s: %s", inbox_url, e)
             return HttpResponse(status=202)
         else:
             reject = {
