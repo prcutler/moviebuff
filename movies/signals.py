@@ -2,19 +2,24 @@ from django.conf import settings
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils.html import escape
+import logging
 import uuid
 
 from .models import Watchlist, Watched
 from fedi.models import FediActivity, FediDelivery, FediFollower
+
+logger = logging.getLogger(__name__)
 
 PUBLIC = "https://www.w3.org/ns/activitystreams#Public"
 
 
 def _create_note(user, content, url=None, attachment_url=None):
     if not settings.ACTIVITYPUB_ENABLED:
+        logger.debug("_create_note: ACTIVITYPUB_ENABLED is False")
         return
     profile = getattr(user, "userprofile", None)
     if not profile or not profile.fedi_enabled:
+        logger.debug("_create_note: fedi_enabled is False for %s", user.username)
         return
     actor = user.fediactor
     base = settings.ACTIVITYPUB_DOMAIN.rstrip("/")
@@ -46,8 +51,10 @@ def _create_note(user, content, url=None, attachment_url=None):
         actor=actor, ap_id=activity_id, type="Create", payload=payload
     )
     followers = actor.followers.filter(state=FediFollower.ACCEPTED)
+    logger.info("_create_note: found %d accepted followers for %s", followers.count(), user.username)
     for follower in followers:
         FediDelivery.objects.create(activity=activity, follower=follower)
+        logger.info("_create_note: queued delivery to %s", follower.remote_actor_id)
 
 
 # @receiver(post_save, sender=Watchlist)
