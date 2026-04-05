@@ -35,6 +35,8 @@ def _create_note(user, content, url=None, attachment_url=None):
         "to": [PUBLIC],
         "cc": [actor.followers_url],
         "content": content,
+        "mediaType": "text/html",
+        "tag": [],
     }
     if url:
         note["url"] = url

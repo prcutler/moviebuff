@@ -418,6 +418,8 @@ def share_to_fediverse(request, movie_id):
         'to': [public],
         'cc': [actor.followers_url],
         'content': content,
+        'mediaType': 'text/html',
+        'tag': [],
         'url': movie_url,
     }
     if movie.tmdb_poster_path:
