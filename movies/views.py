@@ -408,9 +408,12 @@ def share_to_fediverse(request, movie_id):
     note_id = activity_id
     public = 'https://www.w3.org/ns/activitystreams#Public'
     movie_url = f'{base}/movies/details/{movie.id}'
+    from django.utils import timezone
+    now = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
     note = {
         'id': note_id,
         'type': 'Note',
+        'published': now,
         'attributedTo': actor.actor_id,
         'to': [public],
         'cc': [actor.followers_url],

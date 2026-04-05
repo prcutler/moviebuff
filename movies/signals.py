@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from django.utils import timezone
 from django.utils.html import escape
 import logging
 import uuid
@@ -25,9 +26,11 @@ def _create_note(user, content, url=None, attachment_url=None):
     base = settings.ACTIVITYPUB_DOMAIN.rstrip("/")
     activity_id = f"{base}/activities/{uuid.uuid4()}"
     note_id = activity_id
+    now = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
     note = {
         "id": note_id,
         "type": "Note",
+        "published": now,
         "attributedTo": actor.actor_id,
         "to": [PUBLIC],
         "cc": [actor.followers_url],
