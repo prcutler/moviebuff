@@ -37,10 +37,13 @@
     {% if random_movies %}
     <div class="row row-cols-2 row-cols-md-4 g-3 my-4">
         {% for entry in random_movies %}
-        <div class="col">
+        <div class="col text-center">
             <a href="{% url 'movie_details' entry.movie.id %}">
                 <img src="{{ entry.movie.tmdb_poster_path }}" class="img-fluid rounded shadow-sm" alt="{{ entry.movie.title }}">
             </a>
+            {% if entry.stars %}
+            <div style="color: #f5c518;">{{ entry.stars }}</div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>

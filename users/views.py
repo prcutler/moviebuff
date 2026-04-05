@@ -9,11 +9,15 @@ from .forms import RegisterForm
 from movies.models import Watched, Watchlist, CustomWatchlist
 
 def home(request):
-    random_movies = (
-        Watched.objects.select_related("movie")
+    random_movies = [
+        {
+            "movie": w.movie,
+            "stars": "★" * int(w.rating) + "☆" * (5 - int(w.rating)) if w.rating is not None else "",
+        }
+        for w in Watched.objects.select_related("movie")
         .exclude(movie__tmdb_poster_path="")
         .order_by("?")[:4]
-    )
+    ]
     recent_reviews = [
         {
             "movie": w.movie,
