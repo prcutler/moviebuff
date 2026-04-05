@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.conf import settings
+from django.core.paginator import Paginator
 from urllib.parse import urlparse
 from .forms import RegisterForm
 from movies.models import Watched, Watchlist, CustomWatchlist
@@ -44,15 +45,33 @@ def register(request):
 
 @login_required
 def dashboard(request):
-    watched_movies = Watched.objects.filter(user=request.user).order_by('-watched_date')
-    watchlist_movies = Watchlist.objects.filter(user=request.user).order_by('-added_date')
+    watched_qs = Watched.objects.filter(user=request.user).order_by('-watched_date')
+    watchlist_qs = Watchlist.objects.filter(user=request.user).order_by('-added_date')
     custom_watchlists = CustomWatchlist.objects.filter(users=request.user).order_by('name')
 
     return render(request, 'users/dashboard.html', {
-        'watched_movies': watched_movies,
-        'watchlist_movies': watchlist_movies,
+        'page_obj': Paginator(watched_qs, 8).get_page(1),
+        'watchlist_page_obj': Paginator(watchlist_qs, 8).get_page(1),
         'custom_watchlists': custom_watchlists,
     })
+
+
+@login_required
+def dashboard_watched_page(request):
+    if not request.headers.get('HX-Request'):
+        return redirect('view_all_watched')
+    watched_qs = Watched.objects.filter(user=request.user).order_by('-watched_date')
+    page_obj = Paginator(watched_qs, 8).get_page(request.GET.get('page', 1))
+    return render(request, 'users/partials/dashboard_watched.html', {'page_obj': page_obj})
+
+
+@login_required
+def dashboard_watchlist_page(request):
+    if not request.headers.get('HX-Request'):
+        return redirect('view_all_watchlist')
+    watchlist_qs = Watchlist.objects.filter(user=request.user).order_by('-added_date')
+    page_obj = Paginator(watchlist_qs, 8).get_page(request.GET.get('page', 1))
+    return render(request, 'users/partials/dashboard_watchlist.html', {'page_obj': page_obj})
 
 def user_profile(request, username):
     user = get_object_or_404(User, username=username)

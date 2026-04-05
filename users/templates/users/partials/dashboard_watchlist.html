@@ -1,0 +1,28 @@
+<div id="dashboard-watchlist-section" hx-target="#dashboard-watchlist-section" hx-swap="outerHTML">
+    {% if page_obj %}
+        <div class="row g-4">
+            {% for movie in page_obj %}
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    {% include 'movies/components/movie_card.html' %}
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="Watchlist pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% for page_num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_num == page_obj.number %}active{% endif %}">
+                    <a class="page-link"
+                       hx-get="{% url 'dashboard_watchlist_page' %}?page={{ page_num }}"
+                       hx-push-url="false"
+                       href="#">{{ page_num }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <p>Nothing here, start by making a search!</p>
+    {% endif %}
+</div>
