@@ -14,7 +14,19 @@ def home(request):
         .exclude(movie__tmdb_poster_path="")
         .order_by("?")[:4]
     )
-    return render(request, "users/home.html", {"random_movies": random_movies})
+    recent_reviews = [
+        {
+            "movie": w.movie,
+            "stars": "★" * int(w.rating) + "☆" * (5 - int(w.rating)),
+        }
+        for w in Watched.objects.select_related("movie")
+        .exclude(rating__isnull=True)
+        .order_by("-watched_date")[:5]
+    ]
+    return render(request, "users/home.html", {
+        "random_movies": random_movies,
+        "recent_reviews": recent_reviews,
+    })
 
 def register(request):
     if request.method == "POST":
