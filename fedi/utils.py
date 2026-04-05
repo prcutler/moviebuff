@@ -19,7 +19,12 @@ class HttpSignatureError(Exception):
 
 def fetch_actor(actor_id: str) -> dict:
     """Fetch a remote actor and return its JSON data."""
-    headers = {"Accept": "application/activity+json"}
+    from django.conf import settings
+    user_agent = getattr(settings, "ACTIVITYPUB_USER_AGENT", "moviebuff-activitypub")
+    headers = {
+        "Accept": "application/activity+json",
+        "User-Agent": user_agent,
+    }
     response = requests.get(actor_id, headers=headers, timeout=10)
     response.raise_for_status()
     return response.json()
