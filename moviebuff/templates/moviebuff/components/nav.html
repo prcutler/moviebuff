@@ -46,7 +46,7 @@
                 (function() {
                     const btn = document.getElementById('theme-toggle');
                     const icon = document.getElementById('theme-icon');
-                    const current = localStorage.getItem('theme') || 'light';
+                    const current = localStorage.getItem('theme') || 'dark';
                     icon.textContent = current === 'dark' ? '☀️' : '🌙';
                     btn.addEventListener('click', function() {
                         const html = document.documentElement;
