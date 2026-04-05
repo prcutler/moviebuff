@@ -43,14 +43,24 @@ def register(request):
         form = RegisterForm()
     return render(request, "users/register.html", {"form": form})
 
-@login_required
+def _annotate_stars(page_obj):
+    """Return list of (watched, stars_string) tuples for a page."""
+    result = []
+    for w in page_obj:
+        stars = "★" * int(w.rating) + "☆" * (5 - int(w.rating)) if w.rating is not None else ""
+        result.append((w, stars))
+    return result
+
+
 def dashboard(request):
     watched_qs = Watched.objects.filter(user=request.user).order_by('-watched_date')
     watchlist_qs = Watchlist.objects.filter(user=request.user).order_by('-added_date')
     custom_watchlists = CustomWatchlist.objects.filter(users=request.user).order_by('name')
+    page_obj = Paginator(watched_qs, 8).get_page(1)
 
     return render(request, 'users/dashboard.html', {
-        'page_obj': Paginator(watched_qs, 8).get_page(1),
+        'page_obj': page_obj,
+        'watched_rows': _annotate_stars(page_obj),
         'watchlist_page_obj': Paginator(watchlist_qs, 8).get_page(1),
         'custom_watchlists': custom_watchlists,
     })
@@ -62,7 +72,10 @@ def dashboard_watched_page(request):
         return redirect('view_all_watched')
     watched_qs = Watched.objects.filter(user=request.user).order_by('-watched_date')
     page_obj = Paginator(watched_qs, 8).get_page(request.GET.get('page', 1))
-    return render(request, 'users/partials/dashboard_watched.html', {'page_obj': page_obj})
+    return render(request, 'users/partials/dashboard_watched.html', {
+        'page_obj': page_obj,
+        'watched_rows': _annotate_stars(page_obj),
+    })
 
 
 @login_required
