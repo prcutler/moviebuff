@@ -2,11 +2,19 @@
     {% if watched_rows %}
         <div class="row g-4">
             {% for movie, stars in watched_rows %}
-                <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
-                    {% include 'movies/components/movie_card.html' %}
-                    {% if stars %}
-                    <div class="text-center mt-1" style="color: #f5c518;">{{ stars }}</div>
-                    {% endif %}
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    <div class="card h-100">
+                        <a href="{% url 'movie_details' movie.movie.id %}">
+                            <div class="ratio" style="--bs-aspect-ratio: 150%;">
+                                <img src="{{ movie.movie.tmdb_poster_path }}" class="img-fluid position-absolute top-0 start-0 w-100 h-100 object-fit-cover" alt="{{ movie.movie.title }} poster" loading="lazy" width="400" height="600">
+                            </div>
+                        </a>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ movie.movie.title }}</h5>
+                            <p class="card-text">{{ movie.movie.release_date }}</p>
+                            {% if stars %}<p class="card-text" style="color: #f5c518;">{{ stars }}</p>{% endif %}
+                        </div>
+                    </div>
                 </div>
             {% endfor %}
         </div>
