@@ -8,16 +8,32 @@
     <p>Welcome to Paul Cutler's movie collection.</p>
     <p>This is a personal collection tracking action, drama, sci-fi, and classic movies — the genres that never get old.</p>
 
-    {% if recent_reviews %}
-    <section aria-labelledby="recent-reviews-title" class="my-4">
-        <h2 id="recent-reviews-title" class="h5 mb-3">Recent Ratings</h2>
-        <ul class="list-unstyled">
-            {% for entry in recent_reviews %}
-            <li class="mb-1">{{ entry.movie.title }} — <span style="color: #f5c518;">{{ entry.stars }}</span></li>
-            {% endfor %}
-        </ul>
-    </section>
-    {% endif %}
+    <div class="row my-4">
+        {% if recent_reviews %}
+        <div class="col-md-6">
+            <section aria-labelledby="recent-reviews-title">
+                <h2 id="recent-reviews-title" class="h5 mb-3">Recent Ratings</h2>
+                <ul class="list-unstyled">
+                    {% for entry in recent_reviews %}
+                    <li class="mb-1">{{ entry.movie.title }} — <span style="color: #f5c518;">{{ entry.stars }}</span></li>
+                    {% endfor %}
+                </ul>
+            </section>
+        </div>
+        {% endif %}
+        <div class="col-md-6">
+            <section aria-labelledby="legend-title">
+                <h2 id="legend-title" class="h5 mb-3">Legend</h2>
+                <ul class="list-unstyled">
+                    <li class="mb-1"><span style="color: #f5c518;">★☆☆☆☆</span> — Hated it</li>
+                    <li class="mb-1"><span style="color: #f5c518;">★★☆☆☆</span> — Disliked it</li>
+                    <li class="mb-1"><span style="color: #f5c518;">★★★☆☆</span> — It was ok</li>
+                    <li class="mb-1"><span style="color: #f5c518;">★★★★☆</span> — Liked it</li>
+                    <li class="mb-1"><span style="color: #f5c518;">★★★★★</span> — Loved it</li>
+                </ul>
+            </section>
+        </div>
+    </div>
     {% if random_movies %}
     <div class="row row-cols-2 row-cols-md-4 g-3 my-4">
         {% for entry in random_movies %}
