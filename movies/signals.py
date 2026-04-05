@@ -92,15 +92,12 @@ def watched_events(sender, instance, created, **kwargs):
     movie = instance.movie
     url = f"{settings.ACTIVITYPUB_DOMAIN.rstrip('/')}/movies/details/{movie.id}"
     if created:
-        date_str = instance.watched_date.date().isoformat()
-        content = f"watched {movie.title} on {date_str}"
-        _create_note(instance.user, content, url=url)
         return
 
     # rating updated
     if instance.rating is not None and instance.rating != getattr(instance, "_prev_rating", None):
         content = f"rated {movie.title} ⭐ {instance.rating}/5"
-        _create_note(instance.user, content, url=url)
+        _create_note(instance.user, content, url=url, attachment_url=movie.tmdb_poster_path or None)
     # review created
     if instance.review and instance.review != getattr(instance, "_prev_review", ""):
         safe_review = escape(instance.review)
