@@ -5,7 +5,10 @@ from django.views.decorators.csrf import csrf_exempt
 from urllib.parse import urlparse
 from math import ceil
 import json
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 from .models import FediFollower, FediActivity
 from .utils import HttpSignatureError, post_activity, verify_http_signature
@@ -231,13 +234,18 @@ def inbox(request, username):
 
     try:
         activity = json.loads(request.body)
-    except Exception:
+    except Exception as e:
+        logger.error("Failed to parse inbox body: %s", e)
         return HttpResponse(status=400)
 
     try:
         remote_actor = verify_http_signature(request)
-    except HttpSignatureError:
+    except HttpSignatureError as e:
+        logger.error("HTTP signature verification failed: %s", e)
         return HttpResponse(status=401)
+    except Exception as e:
+        logger.exception("Unexpected error verifying HTTP signature: %s", e)
+        return HttpResponse(status=500)
 
     activity_type = activity.get("type")
     if activity_type == "Follow" and activity.get("object") == actor.actor_id:
