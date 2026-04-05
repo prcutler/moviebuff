@@ -4,6 +4,7 @@ from django.http import JsonResponse, Http404, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from urllib.parse import urlparse
 from math import ceil
+import hashlib
 import json
 import logging
 import re
@@ -79,6 +80,8 @@ def actor(request, username):
         raise Http404
 
     actor = user.fediactor
+    email_hash = hashlib.sha256("paul@paulcutler.org".encode()).hexdigest()
+    gravatar_url = f"https://www.gravatar.com/avatar/{email_hash}?s=400&d=identicon"
     data = {
         "@context": "https://www.w3.org/ns/activitystreams",
         "id": actor.actor_id,
@@ -87,6 +90,11 @@ def actor(request, username):
         "inbox": actor.inbox_url,
         "outbox": actor.outbox_url,
         "followers": actor.followers_url,
+        "icon": {
+            "type": "Image",
+            "mediaType": "image/jpeg",
+            "url": gravatar_url,
+        },
         "publicKey": {
             "id": f"{actor.actor_id}#main-key",
             "owner": actor.actor_id,
