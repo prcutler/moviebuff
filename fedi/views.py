@@ -252,6 +252,10 @@ def inbox(request, username):
         logger.error("HTTP signature verification failed: %s", e)
         return HttpResponse(status=401)
     except Exception as e:
+        error_str = str(e)
+        if "410" in error_str:
+            logger.info("Ignoring activity from deleted/suspended actor: %s", error_str)
+            return HttpResponse(status=202)
         logger.exception("Unexpected error verifying HTTP signature: %s", e)
         return HttpResponse(status=500)
 
