@@ -39,7 +39,6 @@ def search_movies(request):
         return render(request, 'movies/search_results.html', {'page_obj': page_obj, 'query': query})
     return render(request, 'movies/search_results.html')
 
-@login_required(login_url='/')
 def movie_details(request, movie_id):
     movie = get_object_or_404(Movie, id=movie_id)
 
@@ -76,21 +75,32 @@ def movie_details(request, movie_id):
         movie.last_updated = current_time
         movie.save()
 
-    is_watched = Watched.objects.filter(user=request.user, movie=movie).exists()
-    is_in_watchlist = Watchlist.objects.filter(user=request.user, movie=movie).exists()
-    watched_entry = Watched.objects.filter(user=request.user, movie=movie).first()
-    user_rating = int(watched_entry.rating) if watched_entry and watched_entry.rating is not None else 0
-
-    # Get custom watchlists that contain the movie
-    custom_watchlists = CustomWatchlist.objects.filter(items__movie=movie, users=request.user).distinct()
-
-    # Calculate user stats
+    # Calculate public stats (available to all visitors)
     total_reviews = Watched.objects.filter(movie=movie, review__isnull=False).count()
     average_rating = Watched.objects.filter(movie=movie, rating__isnull=False).aggregate(Avg('rating'))['rating__avg']
     other_reviews = Watched.objects.filter(movie=movie, review__isnull=False).exclude(review__exact='').order_by('-watched_date')
 
+    # Public rating (first rated entry for this movie)
+    public_watched = Watched.objects.filter(movie=movie, rating__isnull=False).first()
+    public_rating = int(public_watched.rating) if public_watched else 0
+
+    # User-specific data only for authenticated users
+    is_watched = False
+    is_in_watchlist = False
+    watched_entry = None
+    user_rating = 0
+    custom_watchlists = []
+
+    if request.user.is_authenticated:
+        is_watched = Watched.objects.filter(user=request.user, movie=movie).exists()
+        is_in_watchlist = Watchlist.objects.filter(user=request.user, movie=movie).exists()
+        watched_entry = Watched.objects.filter(user=request.user, movie=movie).first()
+        user_rating = int(watched_entry.rating) if watched_entry and watched_entry.rating is not None else 0
+        custom_watchlists = CustomWatchlist.objects.filter(items__movie=movie, users=request.user).distinct()
+
     return render(request, 'movies/movie_details.html', {
         'movie': movie,
+        'public_rating': public_rating,
         'is_watched': is_watched,
         'is_in_watchlist': is_in_watchlist,
         'watched_entry': watched_entry,

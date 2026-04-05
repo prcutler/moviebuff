@@ -21,6 +21,10 @@
                 </div>
             </div>
 
+            {% if public_rating %}
+            <p><strong>My Rating:</strong> <span style="color: #f5c518;">{% for i in "12345" %}{% if forloop.counter <= public_rating %}★{% else %}☆{% endif %}{% endfor %}</span></p>
+            {% endif %}
+
             <section aria-labelledby="reviews-title" class="mb-4">
                 <h3 id="reviews-title">Reviews</h3>
                 {% if other_reviews %}
@@ -49,6 +53,7 @@
                 <p><strong>TMDB Vote Average:</strong> {{ movie.tmdb_vote_average }}/10 ({{ movie.tmdb_vote_count }} votes)</p>
             </section>
 
+            {% if user.is_authenticated %}
             <section aria-labelledby="user-data-title">
                 <h3 id="user-data-title">User Data</h3>
                 {% if is_watched %}
@@ -105,6 +110,7 @@
                     </ul>
                 {% endif %}
             </section>
+            {% endif %}
         </div>
     </div>
 </section>
