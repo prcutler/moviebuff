@@ -1,4 +1,5 @@
 {% extends 'moviebuff/base.html' %}
+{% load humanize %}
 
 {% block title %}{{ movie.title }}{% endblock %}
 
@@ -13,7 +14,7 @@
                     <p class="card-text"><strong>Overview:</strong> {{ movie.overview }}</p>
                     <p class="card-text"><strong>Release Date:</strong> {{ movie.release_date }}</p>
                     <p class="card-text"><strong>Original Language:</strong> {{ movie.original_language }}</p>
-                    <p class="card-text"><strong>Budget:</strong> ${{ movie.budget }}</p>
+                    <p class="card-text"><strong>Budget:</strong> ${{ movie.budget|floatformat:0|intcomma }}</p>
                     <p class="card-text"><strong>Runtime:</strong> {{ movie.runtime }} minutes</p>
                     {% if total_reviews or average_rating %}
                         <p class="card-text"><strong>Average Rating:</strong> {{ average_rating|floatformat:2 }}/5 ({{ total_reviews }} reviews)</p>
