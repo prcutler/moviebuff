@@ -209,6 +209,10 @@ ratingInputs.forEach(input => {
                 currentRating = value;
                 document.getElementById('current-rating').textContent = `${value}/5`;
                 htmx.ajax('GET', '{% url "share_button_partial" movie.id %}', {target: '#share-container', swap: 'innerHTML'});
+                const watchedBtn = document.getElementById('watched-toggle');
+                if (watchedBtn && watchedBtn.textContent.trim() === 'Add to Watched') {
+                    watchedBtn.textContent = 'Remove from Watched';
+                }
             }
         })
         .catch(() => showToast('An error occurred', 'danger'));
