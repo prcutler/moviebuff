@@ -222,7 +222,7 @@ def followers(request, username):
 
 
 def activity_detail(request, activity_uuid):
-    """Serve a single ActivityPub activity/note by UUID so remote servers can fetch it."""
+    """Serve a single ActivityPub Note by UUID so remote servers can fetch it."""
     if not settings.ACTIVITYPUB_ENABLED:
         raise Http404
     base = settings.ACTIVITYPUB_DOMAIN.rstrip("/")
@@ -231,7 +231,9 @@ def activity_detail(request, activity_uuid):
         activity = FediActivity.objects.get(ap_id=ap_id)
     except FediActivity.DoesNotExist:
         raise Http404
-    return JsonResponse(activity.payload, content_type="application/activity+json")
+    note = activity.payload.get("object", activity.payload)
+    note["@context"] = "https://www.w3.org/ns/activitystreams"
+    return JsonResponse(note, content_type="application/activity+json")
 
 
 @csrf_exempt
