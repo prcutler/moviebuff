@@ -17,15 +17,43 @@ class HttpSignatureError(Exception):
     """Raised when an HTTP signature cannot be verified."""
 
 
-def fetch_actor(actor_id: str) -> dict:
-    """Fetch a remote actor and return its JSON data."""
+def fetch_actor(actor_id: str, signing_actor=None) -> dict:
+    """Fetch a remote actor and return its JSON data.
+
+    If signing_actor is provided, the GET request will be signed with their
+    private key, which is required by some strict Mastodon instances.
+    """
     from django.conf import settings
     domain = getattr(settings, "ACTIVITYPUB_DOMAIN", "").rstrip("/")
     user_agent = f"MovieBuff/1.0 (+{domain}/)"
+    parsed = urlparse(actor_id)
+    host = parsed.netloc
+    path = parsed.path or "/"
+    date = formatdate(timeval=None, localtime=False, usegmt=True)
+    accept = 'application/ld+json; profile="https://www.w3.org/ns/activitystreams", application/activity+json'
+
     headers = {
-        "Accept": "application/activity+json",
+        "Accept": accept,
         "User-Agent": user_agent,
+        "Host": host,
+        "Date": date,
     }
+
+    if signing_actor:
+        signed_string = (
+            f"(request-target): get {path}\n"
+            f"host: {host}\n"
+            f"date: {date}"
+        )
+        private_key = load_pem_private_key(signing_actor.private_key_pem.encode(), password=None)
+        signature = base64.b64encode(
+            private_key.sign(signed_string.encode(), padding.PKCS1v15(), hashes.SHA256())
+        ).decode()
+        headers["Signature"] = (
+            f'keyId="{signing_actor.actor_id}#main-key",algorithm="rsa-sha256",'
+            f'headers="(request-target) host date",signature="{signature}"'
+        )
+
     response = requests.get(actor_id, headers=headers, timeout=10)
     response.raise_for_status()
     return response.json()
@@ -69,9 +97,11 @@ def verify_http_signature(request) -> dict:
         signed_parts.append(f"{header}: {value}")
     signed_string = "\n".join(signed_parts)
 
-    # Fetch actor to get public key
+    # Fetch actor to get public key, using local actor to sign the request
     actor_id = key_id.split("#", 1)[0]
-    actor_data = fetch_actor(actor_id)
+    from fedi.models import FediActor
+    local_actor = FediActor.objects.filter(private_key_pem__isnull=False).exclude(private_key_pem="").first()
+    actor_data = fetch_actor(actor_id, signing_actor=local_actor)
     public_key_pem = actor_data.get("publicKey", {}).get("publicKeyPem")
     if not public_key_pem:
         raise HttpSignatureError("No public key")
