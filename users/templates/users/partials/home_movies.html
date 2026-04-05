@@ -1,0 +1,38 @@
+<div id="home-movies" hx-target="#home-movies" hx-swap="outerHTML">
+    {% if movies %}
+    <div class="row row-cols-2 row-cols-md-4 g-3">
+        {% for entry in movies %}
+        <div class="col text-center">
+            <a href="{% url 'movie_details' entry.movie.id %}">
+                <img src="{{ entry.movie.tmdb_poster_path }}" class="img-fluid rounded shadow-sm" alt="{{ entry.movie.title }}">
+            </a>
+            {% if entry.stars %}
+            <div style="color: #f5c518;">{{ entry.stars }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        {% if page > 1 %}
+        <a class="btn btn-outline-secondary btn-sm"
+           hx-get="{% url 'home_movies_page' %}?page={{ page|add:'-1' }}"
+           hx-push-url="false"
+           href="#">← Previous</a>
+        {% else %}
+        <span></span>
+        {% endif %}
+
+        <small class="text-muted">Page {{ page }} of {{ total_pages }}</small>
+
+        {% if page < total_pages %}
+        <a class="btn btn-outline-secondary btn-sm"
+           hx-get="{% url 'home_movies_page' %}?page={{ page|add:'1' }}"
+           hx-push-url="false"
+           href="#">Next →</a>
+        {% else %}
+        <span></span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

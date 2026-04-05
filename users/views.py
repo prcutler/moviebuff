@@ -9,16 +9,33 @@ from urllib.parse import urlparse
 from .forms import RegisterForm
 from movies.models import Watched, Watchlist, CustomWatchlist
 
-def home(request):
-    random_movies = [
+PAGE_SIZE = 4
+
+
+def _build_home_movies_context(page_number):
+    qs = (
+        Watched.objects.select_related("movie")
+        .exclude(movie__tmdb_poster_path="")
+        .exclude(rating__isnull=True)
+        .order_by("-watched_date")
+    )
+    paginator = Paginator(qs, PAGE_SIZE)
+    page_obj = paginator.get_page(page_number)
+    movies = [
         {
             "movie": w.movie,
-            "stars": "★" * int(w.rating) + "☆" * (5 - int(w.rating)) if w.rating is not None else "",
+            "stars": "★" * int(w.rating) + "☆" * (5 - int(w.rating)),
         }
-        for w in Watched.objects.select_related("movie")
-        .exclude(movie__tmdb_poster_path="")
-        .order_by("?")[:4]
+        for w in page_obj
     ]
+    return {
+        "movies": movies,
+        "page": page_obj.number,
+        "total_pages": paginator.num_pages,
+    }
+
+
+def home(request):
     recent_reviews = [
         {
             "movie": w.movie,
@@ -29,9 +46,17 @@ def home(request):
         .order_by("-watched_date")[:5]
     ]
     return render(request, "users/home.html", {
-        "random_movies": random_movies,
+        "home_movies": _build_home_movies_context(1),
         "recent_reviews": recent_reviews,
     })
+
+
+def home_movies_page(request):
+    if not request.headers.get("HX-Request"):
+        return redirect("home")
+    page_number = request.GET.get("page", 1)
+    context = _build_home_movies_context(page_number)
+    return render(request, "users/partials/home_movies.html", context)
 
 def register(request):
     if request.method == "POST":
@@ -52,6 +77,7 @@ def _annotate_stars(page_obj):
     return result
 
 
+@login_required
 def dashboard(request):
     watched_qs = Watched.objects.filter(user=request.user).order_by('-watched_date')
     watchlist_qs = Watchlist.objects.filter(user=request.user).order_by('-added_date')
