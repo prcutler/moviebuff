@@ -421,6 +421,16 @@ def share_to_fediverse(request, movie_id):
         'mediaType': 'text/html',
         'tag': [],
         'url': movie_url,
+        'interactionPolicy': {
+            'canReblog': {
+                'automaticallyApprove': [public, actor.followers_url],
+                'requiresApproval': [],
+            },
+            'canQuote': {
+                'automaticallyApprove': [public, actor.followers_url],
+                'requiresApproval': [],
+            },
+        },
     }
     if movie.tmdb_poster_path:
         note['attachment'] = [{'type': 'Image', 'url': movie.tmdb_poster_path}]

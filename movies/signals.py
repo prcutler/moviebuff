@@ -37,6 +37,16 @@ def _create_note(user, content, url=None, attachment_url=None):
         "content": content,
         "mediaType": "text/html",
         "tag": [],
+        "interactionPolicy": {
+            "canReblog": {
+                "automaticallyApprove": [PUBLIC, actor.followers_url],
+                "requiresApproval": [],
+            },
+            "canQuote": {
+                "automaticallyApprove": [PUBLIC, actor.followers_url],
+                "requiresApproval": [],
+            },
+        },
     }
     if url:
         note["url"] = url
