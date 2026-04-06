@@ -19,7 +19,7 @@ MovieBuff is free and open-source software. It is licensed under the GNU General
 ## Installation
 
 1. Fork this repository
-2. Clone the repository locally to your computer: `git clone ssh://git@codeberg.org/prcutler/moviebuff.git`
+2. Clone the repository locally to your computer: `git clone ssh://git@codeberg.org/yourusername/moviebuff.git` (or you can clone this repo if you reall want to: `git clone ssh://git@codeberg.org/prcutler/moviebuff.git`)
 3. Switch to the Federation branch: `git checkout federation`
 4. Create a Python virtual environment: `python -m venv .venv`
 5. Activate it: `source .venv/bin/activate`
