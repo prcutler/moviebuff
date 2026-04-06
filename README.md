@@ -18,6 +18,5 @@ Todo:
 
 - [ ] Make single user an option with an environment variable.
 - [ ] Enable and disable user registration with an environment variable.
-- [ ] Add a link back to the Home Page from the top left
-- [ ] Add a Code of Conduct and CONTRIBUTING
-
+- [x] Add a link back to the Home Page from the top left
+- [x] Add a Code of Conduct and CONTRIBUTING
