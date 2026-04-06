@@ -4,7 +4,7 @@ MovieBuff is a [fork of retiolus' MovieBuff](https://codeberg.org/retiolus/movie
 
 See it in action at: [https://moviebuff.silversaucer.com](https://moviebuff.silversaucer.com)
 
-With the assistance of Claude, significant changes have been made:
+With the assistance of Claude, significant changes have been made. The changes can be found in the [`Federation` branch](https://codeberg.org/prcutler/moviebuff/src/branch/federation):
 
 - Federation has been added and is working. Upon rating a movie, a message to the Fediverse is sent with the rating and movie poster.
 - Added Dark Mode and made it the default.
