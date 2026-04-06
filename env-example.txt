@@ -1,0 +1,8 @@
+SECRET_KEY=your_django_secret_key
+ALLOWED_HOSTS=127.0.0.1 (for dev, your domain name for production)
+CSRF_TRUSTED_ORIGINS=http://localhost (your domain name for production)
+TMDB_API_KEY=5fb2c4df9c17654ae93cbefbf6d3f1d1 (Your TMDB API Key - don't share this!)
+DOMAIN_NAME=localhost (or your domain name for production)
+ACTIVITYPUB_ENABLED=True (Do you want movie ratings shared to the Fediverse automatically? Default is False)
+ACTIVITYPUB_DOMAIN=https://yourdomain.com (Your domain name)
+REGISTRATION=False (Do you want to accept new users? Default is False, you will need to change this to True to register at least one user)
