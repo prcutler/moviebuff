@@ -12,6 +12,9 @@
                 {{ form.as_p }}
                 <button type="submit" class="btn btn-primary">Login</button>
             </form>
+            {% if not user.is_authenticated and REGISTRATION_ENABLED %}
+            <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+            {% endif %}
         </div>
     </div>
 </section>

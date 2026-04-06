@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import Http404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -59,6 +60,8 @@ def home_movies_page(request):
     return render(request, "users/partials/home_movies.html", context)
 
 def register(request):
+    if not settings.REGISTRATION_ENABLED:
+        raise Http404
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
