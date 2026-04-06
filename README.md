@@ -10,8 +10,8 @@ With the assistance of Claude, significant changes have been made. The changes c
 
 - Federation has been added and is working. Upon rating a movie, a message to the Fediverse is sent with the rating and movie poster.
 - Added Dark Mode and made it the default.
-- Disabled registration making it a single user instance.
-- Update the home page to display Recent Ratings, a Legend, and movie posters for the last four movies rated. Using HTMX, users can browse through the movies rated on the home page and click through to see movie details.
+- Made registration a `.env` variable. You can disable registration to avoid spammers or leave it open.
+- Updated the home page to display Recent Ratings, a Legend, and movie posters for the last four movies rated. Using HTMX, users can browse through the movies rated on the home page and click through to see movie details.
 - Made Movie Ratings visible in the movie cards.
 
 MovieBuff is free and open-source software. It is licensed under the GNU General Public License Version 3.
