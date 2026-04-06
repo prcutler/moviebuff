@@ -13,10 +13,3 @@ With the assistance of Claude, significant changes have been made. The changes c
 - Made Movie Ratings visible in the movie cards.
 
 MovieBuff is free and open-source software. It is licensed under the GNU General Public License Version 3.
-
-Todo:
-
-- [ ] Make single user an option with an environment variable.
-- [ ] Enable and disable user registration with an environment variable.
-- [x] Add a link back to the Home Page from the top left
-- [x] Add a Code of Conduct and CONTRIBUTING
