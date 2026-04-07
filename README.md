@@ -8,11 +8,19 @@ See it in action at: [https://moviebuff.silversaucer.com](https://moviebuff.silv
 
 With the assistance of Claude, significant changes have been made. The changes can be found in the [`Federation` branch](https://codeberg.org/prcutler/moviebuff/src/branch/federation):
 
-- Federation has been added and is working. Upon rating a movie, a message to the Fediverse is sent with the rating and movie poster.
-- Added Dark Mode and made it the default.
-- Made registration a `.env` variable. You can disable registration to avoid spammers or leave it open.
-- Updated the home page to display Recent Ratings, a Legend, and movie posters for the last four movies rated. Using HTMX, users can browse through the movies rated on the home page and click through to see movie details.
-- Made Movie Ratings visible in the movie cards.
+- Added dark mode and made it the default with a toggle to change light or dark mode on the home page
+- Added working Federation based on the buiding blocks present in the app
+- Changed Federation to only post when a movie is rated. Also added a Share to Fediverse button using HTMX that appears when a movie is added to the Watched Movies list
+- Add an environment variable and code to enable or disable registration (to avoid spammers)
+- Disabled the registration pages if the user is unauthenticated and registration is disabled
+- Updated the home page to show a legend, the five most recent movies rated, movie posters for the four most recent movies rated, and HTMX to page through the rated movies
+- In the Dashboard, added HTMX to page through all the Watched Movies
+- In each movie card, added the star ratings for the movie
+- Updated the datetime fields to be MON/DAY/YEAR and added commas to the movie's budget
+- Added a Font Awesome film icon in the upper left and made it and Moviebuff clickable to return to the home page
+- Added a custom footer that matches [silversaucer.com](https://silversaucer.com)
+- Added a CONTRIBUTING.md and CODE_OF_CONDUCT.md
+- Added installation instructions in the README
 
 MovieBuff is free and open-source software. It is licensed under the GNU General Public License Version 3.
 
