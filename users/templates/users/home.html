@@ -1,21 +1,26 @@
-{% extends 'moviebuff/base.html' %}
-
-{% block title %}Home{% endblock %}
-
-{% block content %}
+{% extends 'moviebuff/base.html' %} {% block title %}Home{% endblock %} {% block
+content %}
 <section aria-labelledby="home-title">
     <h1 id="home-title" class="mb-4">Welcome to MovieBuff!</h1>
     <p>Welcome to Paul Cutler's movie collection.</p>
-    <p>This is a personal collection tracking action, drama, sci-fi, and classic movies — the genres that never get old.</p>
+    <p>
+        This is a personal collection tracking action, drama, sci-fi, and
+        classic movies — the genres that never get old.
+    </p>
 
     <div class="row my-4">
         {% if recent_reviews %}
         <div class="col-md-6">
             <section aria-labelledby="recent-reviews-title">
-                <h2 id="recent-reviews-title" class="h5 mb-3">Recent Ratings</h2>
+                <h2 id="recent-reviews-title" class="h5 mb-3">
+                    Recent Ratings
+                </h2>
                 <ul class="list-unstyled">
                     {% for entry in recent_reviews %}
-                    <li class="mb-1">{{ entry.movie.title }} — <span style="color: #f5c518;">{{ entry.stars }}</span></li>
+                    <li class="mb-1">
+                        {{ entry.movie.title }} —
+                        <span style="color: #f5c518">{{ entry.stars }}</span>
+                    </li>
                     {% endfor %}
                 </ul>
             </section>
@@ -25,26 +30,39 @@
             <section aria-labelledby="legend-title">
                 <h2 id="legend-title" class="h5 mb-3">Legend</h2>
                 <ul class="list-unstyled">
-                    <li class="mb-1"><span style="color: #f5c518;">★☆☆☆☆</span> — Hated it</li>
-                    <li class="mb-1"><span style="color: #f5c518;">★★☆☆☆</span> — Disliked it</li>
-                    <li class="mb-1"><span style="color: #f5c518;">★★★☆☆</span> — It was ok</li>
-                    <li class="mb-1"><span style="color: #f5c518;">★★★★☆</span> — Liked it</li>
-                    <li class="mb-1"><span style="color: #f5c518;">★★★★★</span> — Loved it</li>
+                    <li class="mb-1">
+                        <span style="color: #f5c518">★☆☆☆☆</span> — Hated it
+                    </li>
+                    <li class="mb-1">
+                        <span style="color: #f5c518">★★☆☆☆</span> — Disliked it
+                    </li>
+                    <li class="mb-1">
+                        <span style="color: #f5c518">★★★☆☆</span> — Liked it
+                    </li>
+                    <li class="mb-1">
+                        <span style="color: #f5c518">★★★★☆</span> — Really Liked
+                        it
+                    </li>
+                    <li class="mb-1">
+                        <span style="color: #f5c518">★★★★★</span> — Loved it
+                    </li>
                 </ul>
             </section>
         </div>
     </div>
     {% if home_movies.movies %}
     <div class="my-4">
-        {% include 'users/partials/home_movies.html' with movies=home_movies.movies page=home_movies.page total_pages=home_movies.total_pages %}
+        {% include 'users/partials/home_movies.html' with
+        movies=home_movies.movies page=home_movies.page
+        total_pages=home_movies.total_pages %}
     </div>
-    {% endif %}
-
-    {% if user.is_authenticated %}
-        <p>Hello, {{ user.username }}! Access your <a href="{% url 'dashboard' %}">dashboard</a>.</p>
+    {% endif %} {% if user.is_authenticated %}
+    <p>
+        Hello, {{ user.username }}! Access your
+        <a href="{% url 'dashboard' %}">dashboard</a>.
+    </p>
     {% else %}
-        <p>Please <a href="{% url 'login' %}">log in</a>.</p>
-        {# or <a href="{% url 'register' %}">create an account</a> #}
-    {% endif %}
+    <p>Please <a href="{% url 'login' %}">log in</a>.</p>
+    {# or <a href="{% url 'register' %}">create an account</a> #} {% endif %}
 </section>
 {% endblock %}
