@@ -1,5 +1,6 @@
-{% extends 'moviebuff/base.html' %} {% block title %}Home{% endblock %} {% block
-content %}
+{% extends 'moviebuff/base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
 <section aria-labelledby="home-title">
     <h1 id="home-title" class="mb-4">Welcome to MovieBuff!</h1>
     <p>Welcome to Paul Cutler's movie collection.</p>
@@ -52,9 +53,7 @@ content %}
     </div>
     {% if home_movies.movies %}
     <div class="my-4">
-        {% include 'users/partials/home_movies.html' with
-        movies=home_movies.movies page=home_movies.page
-        total_pages=home_movies.total_pages %}
+        {% include 'users/partials/home_movies.html' with movies=home_movies.movies page=home_movies.page total_pages=home_movies.total_pages %}
     </div>
     {% endif %} {% if user.is_authenticated %}
     <p>
