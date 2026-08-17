@@ -1,0 +1,44 @@
+{% comment %}
+Shelf state, rating and review controls. Used by both the show and the
+season page; the caller passes the URLs so the same markup serves either
+level. Expects: state_url, rating_url, review_url, user_shelf, user_rating,
+state_choices.
+{% endcomment %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h6 text-body-secondary mb-3">Your tracking</h2>
+
+        <form method="post" action="{{ state_url }}" class="mb-3">
+            {% csrf_token %}
+            <div class="btn-group flex-wrap" role="group" aria-label="Shelf state">
+                {% for value, label in state_choices %}
+                    <button type="submit" name="state" value="{{ value }}" class="btn btn-sm {% if user_shelf.state == value %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ label }}</button>
+                {% endfor %}
+                {% if user_shelf %}
+                    <button type="submit" name="state" value="" class="btn btn-sm btn-outline-danger">Remove</button>
+                {% endif %}
+            </div>
+        </form>
+
+        <form method="post" action="{{ rating_url }}" class="mb-3">
+            {% csrf_token %}
+            <label class="form-label small text-body-secondary mb-1">Your rating</label>
+            <div class="d-flex align-items-center gap-2">
+                <select name="rating" class="form-select form-select-sm" style="width:auto" aria-label="Your rating">
+                    <option value="">&mdash;</option>
+                    {% for value in "12345"|make_list %}
+                        <option value="{{ value }}" {% if user_rating|stringformat:"s" == value %}selected{% endif %}>{{ value }} / 5</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-sm btn-primary" type="submit">Save rating</button>
+            </div>
+        </form>
+
+        <form method="post" action="{{ review_url }}">
+            {% csrf_token %}
+            <label for="review-{{ review_url|slugify }}" class="form-label small text-body-secondary mb-1">Your review</label>
+            <textarea id="review-{{ review_url|slugify }}" name="review" class="form-control form-control-sm mb-2" rows="3" maxlength="300" placeholder="What did you think?">{{ user_shelf.review }}</textarea>
+            <button class="btn btn-sm btn-primary" type="submit">Save review</button>
+        </form>
+    </div>
+</div>

@@ -1,65 +1,13 @@
 from django.conf import settings
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from django.utils import timezone
 from django.utils.html import escape
 import logging
-import uuid
 
 from .models import Watchlist, Watched
-from fedi.models import FediActivity, FediDelivery, FediFollower
-from fedi.vocab import NOTE_CONTEXT, PUBLIC, build_interaction_policy
+from fedi.notes import create_note as _create_note
 
 logger = logging.getLogger(__name__)
-
-
-def _create_note(user, content, url=None, attachment_url=None):
-    if not settings.ACTIVITYPUB_ENABLED:
-        logger.debug("_create_note: ACTIVITYPUB_ENABLED is False")
-        return
-    profile = getattr(user, "userprofile", None)
-    if not profile or not profile.fedi_enabled:
-        logger.debug("_create_note: fedi_enabled is False for %s", user.username)
-        return
-    actor = user.fediactor
-    base = settings.ACTIVITYPUB_DOMAIN.rstrip("/")
-    activity_id = f"{base}/activities/{uuid.uuid4()}"
-    note_id = activity_id
-    now = timezone.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-    note = {
-        "id": note_id,
-        "type": "Note",
-        "published": now,
-        "attributedTo": actor.actor_id,
-        "to": [PUBLIC],
-        "cc": [actor.followers_url],
-        "content": content,
-        "mediaType": "text/html",
-        "tag": [],
-        "interactionPolicy": build_interaction_policy(actor),
-    }
-    if url:
-        note["url"] = url
-    if attachment_url:
-        note["attachment"] = [{"type": "Image", "url": attachment_url}]
-
-    payload = {
-        "@context": NOTE_CONTEXT,
-        "id": activity_id,
-        "type": "Create",
-        "actor": actor.actor_id,
-        "to": [PUBLIC],
-        "cc": [actor.followers_url],
-        "object": note,
-    }
-    activity = FediActivity.objects.create(
-        actor=actor, ap_id=activity_id, type="Create", payload=payload
-    )
-    followers = actor.followers.filter(state=FediFollower.ACCEPTED)
-    logger.info("_create_note: found %d accepted followers for %s", followers.count(), user.username)
-    for follower in followers:
-        FediDelivery.objects.create(activity=activity, follower=follower)
-        logger.info("_create_note: queued delivery to %s", follower.remote_actor_id)
 
 
 # @receiver(post_save, sender=Watchlist)

@@ -1,0 +1,21 @@
+{% for result in page_obj %}
+<div class="col">
+    <div class="card h-100">
+        <a href="{% url 'handle_tv_redirect' result.id %}" class="text-decoration-none">
+            {% if result.poster_path %}
+                <img src="https://image.tmdb.org/t/p/w342{{ result.poster_path }}" class="card-img-top" alt="Poster for {{ result.name }}" loading="lazy">
+            {% else %}
+                <div class="card-img-top d-flex align-items-center justify-content-center bg-body-tertiary" style="aspect-ratio: 2/3"><span class="text-body-secondary small">No poster</span></div>
+            {% endif %}
+        </a>
+        <div class="card-body">
+            <h2 class="card-title h6 mb-1">
+                <a href="{% url 'handle_tv_redirect' result.id %}" class="text-decoration-none stretched-link">{{ result.name }}</a>
+            </h2>
+            {% if result.first_air_date %}
+                <p class="card-text text-body-secondary small mb-0">{{ result.first_air_date|slice:":4" }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}

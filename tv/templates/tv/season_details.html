@@ -1,0 +1,58 @@
+{% extends 'moviebuff/base.html' %}
+
+{% block title %}{{ show.title }} &mdash; {{ season.name|default:season }}{% endblock %}
+
+{% block content %}
+<article>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'tv_show_details' show.id %}">{{ show.title }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ season.name|default:season }}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4 col-lg-3">
+            {% if season.tmdb_poster_path %}
+                <img src="{{ season.tmdb_poster_path }}" class="img-fluid rounded" alt="Poster for {{ season.name }}">
+            {% elif show.tmdb_poster_path %}
+                <img src="{{ show.tmdb_poster_path }}" class="img-fluid rounded" alt="Poster for {{ show.title }}">
+            {% endif %}
+        </div>
+        <div class="col-md-8 col-lg-9">
+            <h1 class="h2 mb-1">{{ season.name|default:season }}</h1>
+            <p class="text-body-secondary">
+                {% if season.air_date %}{{ season.air_date|date:"F Y" }}{% endif %}
+                {% if season.episode_count %} &middot; {{ season.episode_count }} episode{{ season.episode_count|pluralize }}{% endif %}
+            </p>
+            {% if season.overview %}
+                <p>{{ season.overview }}</p>
+            {% endif %}
+            {% if average_rating %}
+                <p class="text-body-secondary small mb-0">Average here: {{ average_rating|floatformat:1 }} / 5</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+        {% url 'tv_set_season_state' show.id season.season_number as state_url %}
+        {% url 'tv_update_season_rating' show.id season.season_number as rating_url %}
+        {% url 'tv_submit_season_review' show.id season.season_number as review_url %}
+        {% include 'tv/components/shelf_controls.html' with state_url=state_url rating_url=rating_url review_url=review_url %}
+    {% endif %}
+
+    {% if other_reviews %}
+        <section aria-labelledby="reviews-title">
+            <h2 id="reviews-title" class="h5 mb-3">Reviews ({{ total_reviews }})</h2>
+            <ul class="list-unstyled">
+                {% for entry in other_reviews %}
+                    <li class="mb-3 pb-3 border-bottom">
+                        <p class="mb-1">{{ entry.review }}</p>
+                        <p class="text-body-secondary small mb-0">&mdash; {{ entry.user.username }}{% if entry.rating %} &middot; {{ entry.rating|floatformat:0 }}/5{% endif %}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+</article>
+{% endblock %}

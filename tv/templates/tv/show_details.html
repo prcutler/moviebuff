@@ -1,0 +1,79 @@
+{% extends 'moviebuff/base.html' %}
+
+{% block title %}{{ show.title }}{% endblock %}
+
+{% block content %}
+<article>
+    <div class="row g-4 mb-4">
+        <div class="col-md-4 col-lg-3">
+            {% if show.tmdb_poster_path %}
+                <img src="{{ show.tmdb_poster_path }}" class="img-fluid rounded" alt="Poster for {{ show.title }}">
+            {% endif %}
+        </div>
+        <div class="col-md-8 col-lg-9">
+            <h1 class="h2 mb-1">{{ show.title }}</h1>
+            <p class="text-body-secondary">
+                {% if show.first_air_date %}{{ show.first_air_date|date:"Y" }}{% endif %}
+                {% if show.status %} &middot; {{ show.status }}{% endif %}
+                {% if show.episode_runtime %} &middot; {{ show.episode_runtime }} min episodes{% endif %}
+            </p>
+            {% if show.genres %}
+                <p class="mb-2">{% for genre in show.genres %}<span class="badge text-bg-secondary me-1">{{ genre }}</span>{% endfor %}</p>
+            {% endif %}
+            {% if show.networks %}
+                <p class="text-body-secondary small mb-3">{{ show.networks|join:", " }}</p>
+            {% endif %}
+            {% if show.overview %}
+                <p>{{ show.overview }}</p>
+            {% endif %}
+            <p class="text-body-secondary small mb-0">
+                {% if average_rating %}Average here: {{ average_rating|floatformat:1 }} / 5 &middot; {% endif %}
+                {% if show.tmdb_vote_average %}TMDB: {{ show.tmdb_vote_average|floatformat:1 }} / 10{% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+        {% url 'tv_set_state' show.id as state_url %}
+        {% url 'tv_update_rating' show.id as rating_url %}
+        {% url 'tv_submit_review' show.id as review_url %}
+        {% include 'tv/components/shelf_controls.html' with state_url=state_url rating_url=rating_url review_url=review_url %}
+    {% endif %}
+
+    <section aria-labelledby="seasons-title" class="mb-4">
+        <h2 id="seasons-title" class="h5 mb-3">Seasons</h2>
+        {% if seasons %}
+            <div class="list-group">
+                {% for season in seasons %}
+                    <a href="{% url 'tv_season_details' show.id season.season_number %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span>
+                            {{ season.name|default:season }}
+                            {% if season.episode_count %}<span class="text-body-secondary small">&middot; {{ season.episode_count }} episode{{ season.episode_count|pluralize }}</span>{% endif %}
+                            {% if season.air_date %}<span class="text-body-secondary small">&middot; {{ season.air_date|date:"Y" }}</span>{% endif %}
+                        </span>
+                        {% if season.user_shelf %}
+                            <span class="badge text-bg-primary">{{ season.user_shelf.get_state_display }}{% if season.user_shelf.rating %} &middot; {{ season.user_shelf.rating|floatformat:0 }}/5{% endif %}</span>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-body-secondary">No seasons catalogued yet.</p>
+        {% endif %}
+    </section>
+
+    {% if other_reviews %}
+        <section aria-labelledby="reviews-title">
+            <h2 id="reviews-title" class="h5 mb-3">Reviews ({{ total_reviews }})</h2>
+            <ul class="list-unstyled">
+                {% for entry in other_reviews %}
+                    <li class="mb-3 pb-3 border-bottom">
+                        <p class="mb-1">{{ entry.review }}</p>
+                        <p class="text-body-secondary small mb-0">&mdash; {{ entry.user.username }}{% if entry.rating %} &middot; {{ entry.rating|floatformat:0 }}/5{% endif %}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+</article>
+{% endblock %}

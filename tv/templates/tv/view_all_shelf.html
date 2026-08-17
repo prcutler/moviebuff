@@ -1,0 +1,36 @@
+{% extends 'moviebuff/base.html' %}
+
+{% block title %}TV &mdash; {{ state_label }}{% endblock %}
+
+{% block content %}
+<section aria-labelledby="shelf-title">
+    <h1 id="shelf-title" class="h2 mb-4">TV &mdash; {{ state_label }}</h1>
+
+    {% if page_obj.object_list %}
+        <div class="list-group mb-4">
+            {% for entry in page_obj %}
+                <a href="{% if entry.season %}{% url 'tv_season_details' entry.season.show_id entry.season.season_number %}{% else %}{% url 'tv_show_details' entry.show_id %}{% endif %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <span>
+                        {% if entry.season %}{{ entry.season.show.title }} &middot; {{ entry.season.name|default:entry.season }}{% else %}{{ entry.show.title }}{% endif %}
+                    </span>
+                    {% if entry.rating %}<span class="badge text-bg-secondary">{{ entry.rating|floatformat:0 }}/5</span>{% endif %}
+                </a>
+            {% endfor %}
+        </div>
+
+        <nav aria-label="pagination">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo; Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next &raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% else %}
+        <p class="text-body-secondary">Nothing here yet. <a href="{% url 'search' %}?kind=tv">Find a show</a> to get started.</p>
+    {% endif %}
+</section>
+{% endblock %}

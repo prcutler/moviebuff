@@ -9,6 +9,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("users.urls")),
     path("movies/", include("movies.urls")),
+    path("tv/", include("tv.urls")),
 ]
 urlpatterns.append(path("", include("fedi.urls")))
 

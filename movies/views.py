@@ -1,8 +1,10 @@
 import time
 import uuid
+from urllib.parse import urlencode
 from django.db.models import Avg
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -15,29 +17,9 @@ from django.conf import settings
 from .forms import WatchedForm, WatchlistForm
 
 def search_movies(request):
-    query = request.GET.get('q')
-    if query:
-        tmdb_connector = TMDbConnector(api_key=settings.TMDB_API_KEY)
-        results = tmdb_connector.search_movie(query)
-        paginator = Paginator(results, 10)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            html = render_to_string(
-                'movies/components/search_result_cards.html',
-                {'page_obj': page_obj},
-                request=request,
-            )
-            next_url = None
-            if page_obj.has_next():
-                next_url = (
-                    f"{request.path}?page={page_obj.next_page_number}&q={escape(query)}"
-                )
-            return JsonResponse({'html': html, 'next_url': next_url})
-
-        return render(request, 'movies/search_results.html', {'page_obj': page_obj, 'query': query})
-    return render(request, 'movies/search_results.html')
+    """Kept so old links still work; movie search now lives in the one search."""
+    params = urlencode({'q': request.GET.get('q', ''), 'kind': 'movie'})
+    return redirect(f"{reverse('search')}?{params}")
 
 def movie_details(request, movie_id):
     movie = get_object_or_404(Movie, id=movie_id)

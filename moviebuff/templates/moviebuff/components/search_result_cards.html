@@ -1,0 +1,27 @@
+{% for card in page_obj %}
+{% if card.kind == 'tv' %}
+    {% url 'handle_tv_redirect' card.tmdb_id as card_url %}
+{% else %}
+    {% url 'handle_movie_redirect' card.tmdb_id as card_url %}
+{% endif %}
+<div class="col">
+    <div class="card h-100">
+        <a href="{{ card_url }}" class="text-decoration-none">
+            {% if card.poster_url %}
+                <img src="{{ card.poster_url }}" class="card-img-top" alt="Poster for {{ card.title }}" loading="lazy">
+            {% else %}
+                <div class="card-img-top d-flex align-items-center justify-content-center bg-body-tertiary" style="aspect-ratio: 2/3"><span class="text-body-secondary small">No poster</span></div>
+            {% endif %}
+        </a>
+        <div class="card-body">
+            <h2 class="card-title h6 mb-1">
+                <a href="{{ card_url }}" class="text-decoration-none stretched-link">{{ card.title }}</a>
+            </h2>
+            <p class="card-text small mb-0">
+                <span class="badge {% if card.kind == 'tv' %}text-bg-info{% else %}text-bg-secondary{% endif %}">{% if card.kind == 'tv' %}TV{% else %}Movie{% endif %}</span>
+                {% if card.year %}<span class="text-body-secondary ms-1">{{ card.year }}</span>{% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endfor %}
