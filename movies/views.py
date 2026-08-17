@@ -402,6 +402,7 @@ def share_to_fediverse(request, movie_id):
     content = f'I just watched {escape(movie.title)} and gave it {stars}'
 
     from fedi.models import FediActivity, FediDelivery, FediFollower
+    from fedi.vocab import NOTE_CONTEXT, build_interaction_policy
     actor = request.user.fediactor
     base = settings.ACTIVITYPUB_DOMAIN.rstrip('/')
     activity_id = f'{base}/activities/{uuid.uuid4()}'
@@ -421,22 +422,13 @@ def share_to_fediverse(request, movie_id):
         'mediaType': 'text/html',
         'tag': [],
         'url': movie_url,
-        'interactionPolicy': {
-            'canReblog': {
-                'automaticallyApprove': [public, actor.followers_url],
-                'requiresApproval': [],
-            },
-            'canQuote': {
-                'automaticallyApprove': [public, actor.followers_url],
-                'requiresApproval': [],
-            },
-        },
+        'interactionPolicy': build_interaction_policy(actor),
     }
     if movie.tmdb_poster_path:
         note['attachment'] = [{'type': 'Image', 'url': movie.tmdb_poster_path}]
 
     payload = {
-        '@context': 'https://www.w3.org/ns/activitystreams',
+        '@context': NOTE_CONTEXT,
         'id': activity_id,
         'type': 'Create',
         'actor': actor.actor_id,

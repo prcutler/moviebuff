@@ -10,5 +10,10 @@ urlpatterns = [
     path("users/<str:username>/followers", views.followers, name="followers"),
     path("users/<str:username>/inbox", views.inbox, name="inbox"),
     path("activities/<uuid:activity_uuid>", views.activity_detail, name="activity_detail"),
+    path(
+        "quote-authorizations/<uuid:authorization_uuid>",
+        views.quote_authorization,
+        name="quote_authorization",
+    ),
 ]
 

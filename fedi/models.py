@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
@@ -63,6 +65,47 @@ class FediActivity(models.Model):
     visibility = models.CharField(max_length=20, default="public")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class FediQuoteAuthorization(models.Model):
+    """A FEP-044f stamp proving we approved a remote post quoting one of ours.
+
+    Third-party servers fetch these by URL to verify a quote is legitimate,
+    so rows are kept even after delivery of the Accept.
+    """
+
+    actor = models.ForeignKey(
+        FediActor, on_delete=models.CASCADE, related_name="quote_authorizations"
+    )
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    # The local Note being quoted.
+    interaction_target = models.URLField()
+    # The remote post doing the quoting.
+    interacting_object = models.URLField()
+    remote_actor_id = models.URLField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("interaction_target", "interacting_object")
+
+    @property
+    def ap_id(self) -> str:
+        from django.conf import settings
+
+        base = settings.ACTIVITYPUB_DOMAIN.rstrip("/")
+        return f"{base}/quote-authorizations/{self.uuid}"
+
+    def to_activitypub(self) -> dict:
+        from .vocab import QUOTE_AUTHORIZATION_CONTEXT
+
+        return {
+            "@context": QUOTE_AUTHORIZATION_CONTEXT,
+            "type": "QuoteAuthorization",
+            "id": self.ap_id,
+            "attributedTo": self.actor.actor_id,
+            "interactionTarget": self.interaction_target,
+            "interactingObject": self.interacting_object,
+        }
 
 
 class FediDelivery(models.Model):

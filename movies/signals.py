@@ -8,10 +8,9 @@ import uuid
 
 from .models import Watchlist, Watched
 from fedi.models import FediActivity, FediDelivery, FediFollower
+from fedi.vocab import NOTE_CONTEXT, PUBLIC, build_interaction_policy
 
 logger = logging.getLogger(__name__)
-
-PUBLIC = "https://www.w3.org/ns/activitystreams#Public"
 
 
 def _create_note(user, content, url=None, attachment_url=None):
@@ -37,16 +36,7 @@ def _create_note(user, content, url=None, attachment_url=None):
         "content": content,
         "mediaType": "text/html",
         "tag": [],
-        "interactionPolicy": {
-            "canReblog": {
-                "automaticallyApprove": [PUBLIC, actor.followers_url],
-                "requiresApproval": [],
-            },
-            "canQuote": {
-                "automaticallyApprove": [PUBLIC, actor.followers_url],
-                "requiresApproval": [],
-            },
-        },
+        "interactionPolicy": build_interaction_policy(actor),
     }
     if url:
         note["url"] = url
@@ -54,7 +44,7 @@ def _create_note(user, content, url=None, attachment_url=None):
         note["attachment"] = [{"type": "Image", "url": attachment_url}]
 
     payload = {
-        "@context": "https://www.w3.org/ns/activitystreams",
+        "@context": NOTE_CONTEXT,
         "id": activity_id,
         "type": "Create",
         "actor": actor.actor_id,
