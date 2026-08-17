@@ -18,6 +18,15 @@ class TMDbConnector:
         search.tv(query=query)
         return search.results
 
+    def search_multi(self, query):
+        """Movies, shows and people in one ranked list.
+
+        Each hit carries a ``media_type`` saying which it is.
+        """
+        search = tmdb.Search()
+        search.multi(query=query)
+        return search.results
+
     def get_tv_details(self, tv_id):
         show = tmdb.TV(tv_id)
         return show.info()
