@@ -42,10 +42,15 @@ def store_previous_watched(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Watched)
 def watched_events(sender, instance, created, **kwargs):
+    """Post when a rating or review appears or changes.
+
+    Deliberately does not skip newly created rows: the "Add to Watched" form
+    saves the date, rating and review in one step, so a rating that arrives
+    with the row is a rating like any other. Logging a viewing with neither
+    stays quiet, because both checks below need something to announce.
+    """
     movie = instance.movie
     url = f"{settings.ACTIVITYPUB_DOMAIN.rstrip('/')}/movies/details/{movie.id}"
-    if created:
-        return
 
     # rating updated
     if instance.rating is not None and instance.rating != getattr(instance, "_prev_rating", None):
