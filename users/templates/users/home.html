@@ -53,9 +53,19 @@
     </div>
     {% if home_movies.movies %}
     <div class="my-4">
+        <h2 class="h5 mb-3">Recently Watched Movies</h2>
         {% include 'users/partials/home_movies.html' with movies=home_movies.movies page=home_movies.page total_pages=home_movies.total_pages %}
     </div>
-    {% endif %} {% if user.is_authenticated %}
+    {% endif %}
+
+    {% if home_tv.tv %}
+    <div class="my-4">
+        <h2 class="h5 mb-3">Recently Watched TV</h2>
+        {% include 'users/partials/home_tv.html' with tv=home_tv.tv page=home_tv.page total_pages=home_tv.total_pages %}
+    </div>
+    {% endif %}
+
+    {% if user.is_authenticated %}
     <p>
         Hello, {{ user.username }}! Access your
         <a href="{% url 'dashboard' %}">dashboard</a>.

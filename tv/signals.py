@@ -18,27 +18,9 @@ from .models import TvShelf
 logger = logging.getLogger(__name__)
 
 
-def _subject_label(shelf):
-    """How a show or season is named in a post."""
-    if shelf.season_id is not None:
-        season = shelf.season
-        name = season.name or f"Season {season.season_number}"
-        return f"{season.show.title} — {name}"
-    return shelf.show.title
-
-
 def _subject_url(shelf):
     base = settings.ACTIVITYPUB_DOMAIN.rstrip("/")
-    if shelf.season_id is not None:
-        season = shelf.season
-        return f"{base}/tv/details/{season.show_id}/season/{season.season_number}/"
-    return f"{base}/tv/details/{shelf.show_id}/"
-
-
-def _poster(shelf):
-    if shelf.season_id is not None:
-        return shelf.season.tmdb_poster_path or shelf.season.show.tmdb_poster_path
-    return shelf.show.tmdb_poster_path
+    return f"{base}{shelf.get_absolute_url()}"
 
 
 @receiver(pre_save, sender=TvShelf)
@@ -63,13 +45,13 @@ def shelf_events(sender, instance, created, **kwargs):
     Shelving alone is deliberately quiet — adding something to a watchlist
     is not news, the same way ``movies`` keeps its watchlist signal off.
     """
-    label = _subject_label(instance)
+    label = instance.display_title
     url = _subject_url(instance)
 
     rating = instance.rating
     if rating is not None and rating != getattr(instance, "_prev_rating", None):
         content = f"rated {escape(label)} ⭐ {rating}/5"
-        create_note(instance.user, content, url=url, attachment_url=_poster(instance) or None)
+        create_note(instance.user, content, url=url, attachment_url=instance.poster or None)
 
     review = instance.review
     if review and review != getattr(instance, "_prev_review", ""):

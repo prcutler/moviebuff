@@ -158,6 +158,29 @@ class TvShelf(models.Model):
         """Either ``"season"`` or ``"show"``."""
         return "season" if self.season_id is not None else "show"
 
+    @property
+    def display_title(self):
+        """How this row's subject is named in a post or a listing.
+
+        A season carries its show's name too, since "Season 1" alone says
+        nothing away from the show's own page.
+        """
+        if self.season_id is not None:
+            season = self.season
+            name = season.name or f"Season {season.season_number}"
+            return f"{season.show.title} — {name}"
+        return self.show.title
+
+    @property
+    def poster(self):
+        """The poster to draw for this row, falling back to the show's."""
+        if self.season_id is not None:
+            return self.season.tmdb_poster_path or self.season.show.tmdb_poster_path
+        return self.show.tmdb_poster_path
+
+    def get_absolute_url(self):
+        return self.subject.get_absolute_url()
+
     def clean(self):
         # Fail with a readable message rather than a raw constraint violation.
         chosen = [self.show_id, self.season_id]

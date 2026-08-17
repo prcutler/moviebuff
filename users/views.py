@@ -6,9 +6,12 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.db.models import Q
+from django.db.models.functions import Coalesce
 from urllib.parse import urlparse
 from .forms import RegisterForm
 from movies.models import Watched, Watchlist, CustomWatchlist
+from tv.models import TvShelf
 
 PAGE_SIZE = 4
 
@@ -36,6 +39,47 @@ def _build_home_movies_context(page_number):
     }
 
 
+def _build_home_tv_context(page_number):
+    """The most recently finished shows and seasons, newest first.
+
+    Ordered by when the member finished it, falling back to when the row
+    last changed — ``watched_date`` is only stamped by the shelf views, so a
+    row created another way (admin, a fixture) would otherwise sort last.
+    """
+    qs = (
+        TvShelf.objects.filter(state=TvShelf.WATCHED)
+        .select_related("show", "season", "season__show")
+        # Matching the movie grid, which only draws entries that have art.
+        .exclude(Q(season__isnull=True) & Q(show__tmdb_poster_path=""))
+        .exclude(
+            Q(season__isnull=False)
+            & Q(season__tmdb_poster_path="")
+            & Q(season__show__tmdb_poster_path="")
+        )
+        .annotate(finished_at=Coalesce("watched_date", "updated_at"))
+        .order_by("-finished_at")
+    )
+    paginator = Paginator(qs, PAGE_SIZE)
+    page_obj = paginator.get_page(page_number)
+    tv = [
+        {
+            "title": entry.display_title,
+            "poster": entry.poster,
+            "url": entry.get_absolute_url(),
+            # Watched without a rating is normal here, unlike the movie grid.
+            "stars": "★" * int(entry.rating) + "☆" * (5 - int(entry.rating))
+            if entry.rating is not None
+            else "",
+        }
+        for entry in page_obj
+    ]
+    return {
+        "tv": tv,
+        "page": page_obj.number,
+        "total_pages": paginator.num_pages,
+    }
+
+
 def home(request):
     recent_reviews = [
         {
@@ -48,6 +92,7 @@ def home(request):
     ]
     return render(request, "users/home.html", {
         "home_movies": _build_home_movies_context(1),
+        "home_tv": _build_home_tv_context(1),
         "recent_reviews": recent_reviews,
     })
 
@@ -58,6 +103,14 @@ def home_movies_page(request):
     page_number = request.GET.get("page", 1)
     context = _build_home_movies_context(page_number)
     return render(request, "users/partials/home_movies.html", context)
+
+
+def home_tv_page(request):
+    if not request.headers.get("HX-Request"):
+        return redirect("home")
+    page_number = request.GET.get("page", 1)
+    context = _build_home_tv_context(page_number)
+    return render(request, "users/partials/home_tv.html", context)
 
 def register(request):
     if not settings.REGISTRATION_ENABLED:
