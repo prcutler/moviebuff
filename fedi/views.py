@@ -11,8 +11,10 @@ import re
 
 logger = logging.getLogger(__name__)
 
-from .models import FediFollower, FediActivity
+from .models import FediFollower, FediActivity, FediQuoteAuthorization
+from .quotes import handle_quote_request
 from .utils import HttpSignatureError, post_activity, verify_http_signature
+from .vocab import NOTE_CONTEXT
 
 PAGE_SIZE = 10
 
@@ -232,8 +234,30 @@ def activity_detail(request, activity_uuid):
     except FediActivity.DoesNotExist:
         raise Http404
     note = activity.payload.get("object", activity.payload)
-    note["@context"] = "https://www.w3.org/ns/activitystreams"
+    # Use the wrapping payload's context: it declares the interaction policy
+    # terms, which a bare activitystreams context would strip right when a
+    # remote server is fetching this Note to check whether it may be quoted.
+    note["@context"] = activity.payload.get("@context", NOTE_CONTEXT)
     return JsonResponse(note, content_type="application/activity+json")
+
+
+def quote_authorization(request, authorization_uuid):
+    """Serve a FEP-044f QuoteAuthorization stamp.
+
+    Remote servers fetch this to verify that a quote of one of our posts
+    was actually approved by us.
+    """
+    if not settings.ACTIVITYPUB_ENABLED:
+        raise Http404
+    try:
+        authorization = FediQuoteAuthorization.objects.select_related("actor").get(
+            uuid=authorization_uuid
+        )
+    except FediQuoteAuthorization.DoesNotExist:
+        raise Http404
+    return JsonResponse(
+        authorization.to_activitypub(), content_type="application/activity+json"
+    )
 
 
 @csrf_exempt
@@ -310,6 +334,10 @@ def inbox(request, username):
             if inbox_url:
                 post_activity(actor, inbox_url, reject)
             return HttpResponse(status=403)
+    elif activity_type == "QuoteRequest":
+        if profile.fedi_enabled:
+            handle_quote_request(actor, activity, remote_actor)
+        return HttpResponse(status=202)
     elif activity_type == "Undo":
         obj = activity.get("object", {})
         if isinstance(obj, dict) and obj.get("type") == "Follow" and obj.get(
