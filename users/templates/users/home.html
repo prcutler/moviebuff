@@ -19,7 +19,7 @@
                 <ul class="list-unstyled">
                     {% for entry in recent_reviews %}
                     <li class="mb-1">
-                        {{ entry.movie.title }} —
+                        <a href="{{ entry.url }}" class="text-decoration-none">{{ entry.title }}</a> —
                         <span style="color: #f5c518">{{ entry.stars }}</span>
                     </li>
                     {% endfor %}

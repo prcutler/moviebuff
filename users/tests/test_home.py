@@ -4,8 +4,9 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
+from movies.models import Movie, Watched
 from tv.models import TvSeason, TvShelf, TvShow
-from users.views import _build_home_tv_context
+from users.views import _build_home_tv_context, _build_recent_ratings
 
 POSTER = "https://img.example/p.jpg"
 
@@ -144,8 +145,6 @@ class HomeTvSectionTests(TestCase):
         self.assertNotContains(response, "Recently Watched TV")
 
     def test_movies_section_is_headed(self):
-        from movies.models import Movie, Watched
-
         movie = Movie.objects.create(
             tmdb_id=1,
             title="The Martian",
@@ -213,3 +212,131 @@ class HomeTvPaginationTests(TestCase):
         response = self.client.get("/home/tv/?page=2", headers={"HX-Request": "true"})
         self.assertContains(response, "Previous")
         self.assertNotContains(response, "Next")
+
+
+@override_settings(ROOT_URLCONF="moviebuff.urls")
+class RecentRatingsTests(TestCase):
+    """The Recent Ratings list draws from movies and TV together."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username="alice", password="pwd")
+        self.now = timezone.now()
+
+    def _movie(self, title, *, ago_days, rating):
+        movie = Movie.objects.create(
+            tmdb_id=Movie.objects.count() + 1,
+            title=title,
+            overview="",
+            release_date="2020-01-01",
+            tmdb_poster_path=POSTER,
+        )
+        Watched.objects.create(
+            user=self.user,
+            movie=movie,
+            watched_date=self.now - timedelta(days=ago_days),
+            rating=rating,
+        )
+        return movie
+
+    def _tv(self, title, *, ago_days, rating, state=TvShelf.WATCHED):
+        show = TvShow.objects.create(
+            tmdb_id=TvShow.objects.count() + 1,
+            title=title,
+            tmdb_poster_path=POSTER,
+        )
+        TvShelf.objects.create(
+            user=self.user,
+            show=show,
+            state=state,
+            rating=rating,
+            watched_date=self.now - timedelta(days=ago_days),
+        )
+        return show
+
+    def test_both_kinds_appear_interleaved_by_date(self):
+        self._movie("Movie Old", ago_days=4, rating=3.0)
+        self._tv("TV Newest", ago_days=1, rating=5.0)
+        self._movie("Movie Recent", ago_days=2, rating=4.0)
+        self._tv("TV Older", ago_days=3, rating=2.0)
+
+        titles = [e["title"] for e in _build_recent_ratings()]
+        self.assertEqual(
+            titles, ["TV Newest", "Movie Recent", "TV Older", "Movie Old"]
+        )
+
+    def test_capped_at_five(self):
+        for i in range(4):
+            self._movie(f"Movie {i}", ago_days=i * 2, rating=3.0)
+        for i in range(4):
+            self._tv(f"TV {i}", ago_days=i * 2 + 1, rating=4.0)
+
+        self.assertEqual(len(_build_recent_ratings()), 5)
+
+    def test_cap_picks_the_newest_across_both_sources(self):
+        """A source can contribute more than its share of the top five."""
+        for i in range(5):
+            self._tv(f"TV {i}", ago_days=i, rating=4.0)
+        self._movie("Ancient Movie", ago_days=99, rating=1.0)
+
+        titles = [e["title"] for e in _build_recent_ratings()]
+        self.assertNotIn("Ancient Movie", titles)
+        self.assertEqual(len(titles), 5)
+
+    def test_unrated_entries_are_excluded(self):
+        self._movie("Rated Movie", ago_days=2, rating=3.0)
+        self._tv("Unrated Show", ago_days=1, rating=None)
+
+        titles = [e["title"] for e in _build_recent_ratings()]
+        self.assertEqual(titles, ["Rated Movie"])
+
+    def test_a_rating_counts_even_while_still_watching(self):
+        self._tv("Mid Series", ago_days=1, rating=4.0, state=TvShelf.WATCHING)
+        titles = [e["title"] for e in _build_recent_ratings()]
+        self.assertEqual(titles, ["Mid Series"])
+
+    def test_seasons_carry_their_show_name(self):
+        show = TvShow.objects.create(
+            tmdb_id=99, title="Severance", tmdb_poster_path=POSTER
+        )
+        season = TvSeason.objects.create(
+            show=show, season_number=1, name="Season 1", tmdb_poster_path=POSTER
+        )
+        TvShelf.objects.create(
+            user=self.user,
+            season=season,
+            state=TvShelf.WATCHED,
+            rating=5.0,
+            watched_date=self.now,
+        )
+        self.assertEqual(
+            _build_recent_ratings()[0]["title"], "Severance — Season 1"
+        )
+
+    def test_stars_render_for_both_kinds(self):
+        self._movie("A Movie", ago_days=1, rating=3.0)
+        self._tv("A Show", ago_days=2, rating=5.0)
+
+        by_title = {e["title"]: e["stars"] for e in _build_recent_ratings()}
+        self.assertEqual(by_title["A Movie"], "★★★☆☆")
+        self.assertEqual(by_title["A Show"], "★★★★★")
+
+    def test_entries_link_to_their_own_pages(self):
+        movie = self._movie("A Movie", ago_days=2, rating=3.0)
+        show = self._tv("A Show", ago_days=1, rating=5.0)
+
+        by_title = {e["title"]: e["url"] for e in _build_recent_ratings()}
+        self.assertEqual(by_title["A Show"], f"/tv/details/{show.id}/")
+        self.assertEqual(by_title["A Movie"], f"/movies/details/{movie.id}/")
+
+    def test_empty_when_nothing_is_rated(self):
+        self.assertEqual(_build_recent_ratings(), [])
+
+    def test_home_page_lists_both_kinds(self):
+        self._movie("A Movie", ago_days=2, rating=3.0)
+        self._tv("A Show", ago_days=1, rating=5.0)
+
+        response = self.client.get("/")
+        self.assertContains(response, "Recent Ratings")
+        self.assertContains(response, "A Movie")
+        self.assertContains(response, "A Show")

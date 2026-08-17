@@ -8,12 +8,24 @@ from django.conf import settings
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db.models.functions import Coalesce
+from django.urls import reverse
 from urllib.parse import urlparse
 from .forms import RegisterForm
 from movies.models import Watched, Watchlist, CustomWatchlist
 from tv.models import TvShelf
 
 PAGE_SIZE = 4
+
+# How many entries the "Recent Ratings" list shows.
+RECENT_RATINGS = 5
+
+
+def _stars(rating):
+    """Five-star string for a 0–5 rating, empty when unrated."""
+    if rating is None:
+        return ""
+    filled = int(rating)
+    return "★" * filled + "☆" * (5 - filled)
 
 
 def _build_home_movies_context(page_number):
@@ -28,7 +40,7 @@ def _build_home_movies_context(page_number):
     movies = [
         {
             "movie": w.movie,
-            "stars": "★" * int(w.rating) + "☆" * (5 - int(w.rating)),
+            "stars": _stars(w.rating),
         }
         for w in page_obj
     ]
@@ -67,9 +79,7 @@ def _build_home_tv_context(page_number):
             "poster": entry.poster,
             "url": entry.get_absolute_url(),
             # Watched without a rating is normal here, unlike the movie grid.
-            "stars": "★" * int(entry.rating) + "☆" * (5 - int(entry.rating))
-            if entry.rating is not None
-            else "",
+            "stars": _stars(entry.rating),
         }
         for entry in page_obj
     ]
@@ -80,16 +90,49 @@ def _build_home_tv_context(page_number):
     }
 
 
-def home(request):
-    recent_reviews = [
+def _build_recent_ratings(limit=RECENT_RATINGS):
+    """The newest ratings across both catalogues, movies and TV interleaved.
+
+    The two sources have different shapes and different date columns, so they
+    are merged in Python rather than in SQL. Taking ``limit`` from each first
+    is enough to be correct: any entry in the overall newest ``limit`` must
+    also be within the newest ``limit`` of the source it came from.
+    """
+    movies = [
         {
-            "movie": w.movie,
-            "stars": "★" * int(w.rating) + "☆" * (5 - int(w.rating)),
+            "title": w.movie.title,
+            "url": reverse("movie_details", args=[w.movie_id]),
+            "stars": _stars(w.rating),
+            "when": w.watched_date,
         }
         for w in Watched.objects.select_related("movie")
         .exclude(rating__isnull=True)
-        .order_by("-watched_date")[:5]
+        .order_by("-watched_date")[:limit]
     ]
+    # Any rated row counts, not only finished ones — a series rated partway
+    # through is still a rating, and this list is about ratings.
+    tv = [
+        {
+            "title": entry.display_title,
+            "url": entry.get_absolute_url(),
+            "stars": _stars(entry.rating),
+            "when": entry.finished_at,
+        }
+        for entry in TvShelf.objects.select_related(
+            "show", "season", "season__show"
+        )
+        .exclude(rating__isnull=True)
+        .annotate(finished_at=Coalesce("watched_date", "updated_at"))
+        .order_by("-finished_at")[:limit]
+    ]
+
+    combined = movies + tv
+    combined.sort(key=lambda entry: entry["when"], reverse=True)
+    return combined[:limit]
+
+
+def home(request):
+    recent_reviews = _build_recent_ratings()
     return render(request, "users/home.html", {
         "home_movies": _build_home_movies_context(1),
         "home_tv": _build_home_tv_context(1),
