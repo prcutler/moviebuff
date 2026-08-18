@@ -1,0 +1,39 @@
+<div id="dashboard-tv-section" hx-target="#dashboard-tv-section" hx-swap="outerHTML">
+    {% if tv_rows %}
+        <div class="row g-4">
+            {% for entry in tv_rows %}
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    <div class="card h-100">
+                        <a href="{{ entry.url }}">
+                            <div class="ratio" style="--bs-aspect-ratio: 150%;">
+                                <img src="{{ entry.poster }}" class="img-fluid position-absolute top-0 start-0 w-100 h-100 object-fit-cover" alt="{{ entry.title }} poster" loading="lazy" width="400" height="600">
+                            </div>
+                        </a>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ entry.title }}</h5>
+                            {% if entry.finished %}<p class="card-text">{{ entry.finished|date:"Y-m-d" }}</p>{% endif %}
+                            {% if entry.stars %}<p class="card-text" style="color: #f5c518;">{{ entry.stars }}</p>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if tv_page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="Watched TV pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% for page_num in tv_page_obj.paginator.page_range %}
+                <li class="page-item {% if page_num == tv_page_obj.number %}active{% endif %}">
+                    <a class="page-link"
+                       hx-get="{% url 'dashboard_tv_page' %}?page={{ page_num }}"
+                       hx-push-url="false"
+                       href="#">{{ page_num }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <p>Nothing here yet. <a href="{% url 'search' %}?kind=tv">Find a show</a> to get started.</p>
+    {% endif %}
+</div>

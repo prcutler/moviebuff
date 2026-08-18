@@ -12,6 +12,7 @@ urlpatterns = [
     path('home/movies/', views.home_movies_page, name='home_movies_page'),
     path('home/tv/', views.home_tv_page, name='home_tv_page'),
     path('dashboard/watched/', views.dashboard_watched_page, name='dashboard_watched_page'),
+    path('dashboard/tv/', views.dashboard_tv_page, name='dashboard_tv_page'),
     path('dashboard/watchlist/', views.dashboard_watchlist_page, name='dashboard_watchlist_page'),
     path('user/<str:username>/', views.user_profile, name='user_profile'),
 ]

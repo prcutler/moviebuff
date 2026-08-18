@@ -17,6 +17,13 @@
     {% include 'users/partials/dashboard_watched.html' with page_obj=page_obj %}
 </section>
 
+<section aria-labelledby="watched-tv-heading" class="mt-5">
+    <h2 id="watched-tv-heading" class="mb-4">
+        <a href="{% url 'tv_view_all_shelf' 'watched' %}">Watched TV</a>
+    </h2>
+    {% include 'users/partials/dashboard_tv.html' %}
+</section>
+
 {% if custom_watchlists %}
     <section aria-labelledby="custom-watchlists-heading" class="mt-5">
         <h2 id="custom-watchlists-heading" class="mb-4">Custom Watchlists</h2>
