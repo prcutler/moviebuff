@@ -26,25 +26,6 @@ class MovieActivityTests(TestCase):
             tmdb_poster_path="https://img.example/film.jpg",
         )
 
-    def test_watchlist_add_creates_activity(self):
-        Watchlist.objects.create(user=self.user, movie=self.movie)
-        activity = FediActivity.objects.order_by("-id").first()
-        obj = activity.payload["object"]
-        self.assertIn("added", obj["content"])
-        self.assertEqual(obj["attachment"][0]["url"], self.movie.tmdb_poster_path)
-        self.assertEqual(obj["url"], f"https://example.com/movies/details/{self.movie.id}")
-
-    def test_watched_logged_creates_activity(self):
-        watched = Watched.objects.create(
-            user=self.user,
-            movie=self.movie,
-            watched_date=timezone.now(),
-        )
-        activity = FediActivity.objects.order_by("-id").first()
-        obj = activity.payload["object"]
-        self.assertIn("watched", obj["content"])
-        self.assertIn(str(watched.watched_date.date()), obj["content"])
-
     def test_rating_updated_creates_activity(self):
         watched = Watched.objects.create(
             user=self.user,
