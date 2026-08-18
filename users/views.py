@@ -57,14 +57,14 @@ def _build_home_movies_context(page_number):
     }
 
 
-def _watched_tv_queryset(user=None):
-    """Finished shows and seasons, newest first, optionally for one member.
+def _shelf_tv_queryset(user=None, state=TvShelf.WATCHED):
+    """Shows and seasons on one shelf, most recently touched first.
 
     Ordered by when it was finished, falling back to when the row last
-    changed — ``watched_date`` is only stamped by the shelf views, so a row
-    created another way (admin, a fixture) would otherwise sort last.
+    changed — ``watched_date`` is only stamped by the shelf views, and is
+    never set at all for something still in progress.
     """
-    qs = TvShelf.objects.filter(state=TvShelf.WATCHED).select_related(
+    qs = TvShelf.objects.filter(state=state).select_related(
         "show", "season", "season__show"
     )
     if user is not None:
@@ -84,7 +84,7 @@ def _watched_tv_queryset(user=None):
 
 def _build_home_tv_context(page_number):
     """The most recently finished shows and seasons across everyone."""
-    paginator = Paginator(_watched_tv_queryset(), PAGE_SIZE)
+    paginator = Paginator(_shelf_tv_queryset(), PAGE_SIZE)
     page_obj = paginator.get_page(page_number)
     tv = [
         {
@@ -189,18 +189,74 @@ def _annotate_stars(page_obj):
     return result
 
 
-def _build_dashboard_tv_context(user, page_number):
-    """One row of the member's own most recently finished shows and seasons."""
-    paginator = Paginator(_watched_tv_queryset(user), DASHBOARD_TV_PAGE_SIZE)
+# The dashboard's TV shelves. Each renders through the same partial, so
+# everything that differs between them is named here rather than in a copy.
+DASHBOARD_TV_SHELVES = {
+    'watched': {
+        'state': TvShelf.WATCHED,
+        'section_id': 'dashboard-tv-section',
+        'page_url_name': 'dashboard_tv_page',
+        'label': 'Watched TV',
+    },
+}
+
+
+def _build_dashboard_watchlist_context(user, page_number):
+    """What the member means to watch next: films queued, series underway.
+
+    Two sources with different shapes and different date columns, merged in
+    Python. A watchlist is personal-scale, so materialising both lists to
+    paginate across them is cheaper than the SQL it would take to avoid it.
+    """
+    entries = [
+        {
+            'kind': 'movie',
+            'title': row.movie.title,
+            'subtitle': row.movie.release_date,
+            'poster': row.movie.tmdb_poster_path,
+            'url': reverse('movie_details', args=[row.movie_id]),
+            'when': row.added_date,
+        }
+        for row in Watchlist.objects.filter(user=user).select_related('movie')
+    ] + [
+        {
+            'kind': 'tv',
+            'title': entry.display_title,
+            'subtitle': '',
+            'poster': entry.poster,
+            'url': entry.get_absolute_url(),
+            'when': entry.finished_at,
+        }
+        for entry in _shelf_tv_queryset(user, TvShelf.WATCHING)
+    ]
+    entries.sort(key=lambda item: item['when'], reverse=True)
+
+    paginator = Paginator(entries, DASHBOARD_PAGE_SIZE)
     page_obj = paginator.get_page(page_number)
     return {
-        'tv_page_obj': page_obj,
-        'tv_rows': [
+        'watchlist_page_obj': page_obj,
+        'watchlist_rows': list(page_obj),
+    }
+
+
+def _build_dashboard_tv_context(user, page_number, shelf):
+    """One row of the member's own shows and seasons on ``shelf``."""
+    spec = DASHBOARD_TV_SHELVES[shelf]
+    paginator = Paginator(
+        _shelf_tv_queryset(user, spec['state']), DASHBOARD_TV_PAGE_SIZE
+    )
+    page_obj = paginator.get_page(page_number)
+    return {
+        'section_id': spec['section_id'],
+        'label': spec['label'],
+        'page_url': reverse(spec['page_url_name']),
+        'page_obj': page_obj,
+        'rows': [
             {
                 'title': entry.display_title,
                 'poster': entry.poster,
                 'url': entry.get_absolute_url(),
-                'finished': entry.finished_at,
+                'when': entry.finished_at,
                 'stars': _stars(entry.rating),
             }
             for entry in page_obj
@@ -211,16 +267,15 @@ def _build_dashboard_tv_context(user, page_number):
 @login_required
 def dashboard(request):
     watched_qs = Watched.objects.filter(user=request.user).order_by('-watched_date')
-    watchlist_qs = Watchlist.objects.filter(user=request.user).order_by('-added_date')
     custom_watchlists = CustomWatchlist.objects.filter(users=request.user).order_by('name')
     page_obj = Paginator(watched_qs, DASHBOARD_WATCHED_PAGE_SIZE).get_page(1)
 
     return render(request, 'users/dashboard.html', {
         'page_obj': page_obj,
         'watched_rows': _annotate_stars(page_obj),
-        'watchlist_page_obj': Paginator(watchlist_qs, DASHBOARD_PAGE_SIZE).get_page(1),
         'custom_watchlists': custom_watchlists,
-        **_build_dashboard_tv_context(request.user, 1),
+        'tv_watched': _build_dashboard_tv_context(request.user, 1, 'watched'),
+        **_build_dashboard_watchlist_context(request.user, 1),
     })
 
 
@@ -238,21 +293,32 @@ def dashboard_watched_page(request):
     })
 
 
+def _dashboard_tv_partial(request, shelf):
+    spec = DASHBOARD_TV_SHELVES[shelf]
+    if not request.headers.get('HX-Request'):
+        return redirect('tv_view_all_shelf', state=spec['state'])
+    return render(
+        request,
+        'users/partials/dashboard_tv.html',
+        {'ctx': _build_dashboard_tv_context(
+            request.user, request.GET.get('page', 1), shelf
+        )},
+    )
+
+
 @login_required
 def dashboard_tv_page(request):
-    if not request.headers.get('HX-Request'):
-        return redirect('tv_view_all_shelf', state=TvShelf.WATCHED)
-    context = _build_dashboard_tv_context(request.user, request.GET.get('page', 1))
-    return render(request, 'users/partials/dashboard_tv.html', context)
+    return _dashboard_tv_partial(request, 'watched')
 
 
 @login_required
 def dashboard_watchlist_page(request):
     if not request.headers.get('HX-Request'):
         return redirect('view_all_watchlist')
-    watchlist_qs = Watchlist.objects.filter(user=request.user).order_by('-added_date')
-    page_obj = Paginator(watchlist_qs, 8).get_page(request.GET.get('page', 1))
-    return render(request, 'users/partials/dashboard_watchlist.html', {'page_obj': page_obj})
+    context = _build_dashboard_watchlist_context(
+        request.user, request.GET.get('page', 1)
+    )
+    return render(request, 'users/partials/dashboard_watchlist.html', context)
 
 def user_profile(request, username):
     user = get_object_or_404(User, username=username)

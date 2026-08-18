@@ -1,18 +1,35 @@
+{% comment %}
+The watchlist: films queued up and series already underway, newest first.
+The two kinds sit in one grid, so each card says which it is.
+{% endcomment %}
 <div id="dashboard-watchlist-section" hx-target="#dashboard-watchlist-section" hx-swap="outerHTML">
-    {% if page_obj %}
+    {% if watchlist_rows %}
         <div class="row g-4">
-            {% for movie in page_obj %}
+            {% for entry in watchlist_rows %}
                 <div class="col-sm-6 col-md-4 col-lg-3">
-                    {% include 'movies/components/movie_card.html' %}
+                    <div class="card h-100">
+                        <a href="{{ entry.url }}">
+                            <div class="ratio" style="--bs-aspect-ratio: 150%;">
+                                <img src="{{ entry.poster }}" class="img-fluid position-absolute top-0 start-0 w-100 h-100 object-fit-cover" alt="{{ entry.title }} poster" loading="lazy" width="400" height="600">
+                            </div>
+                        </a>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ entry.title }}</h5>
+                            <p class="card-text">
+                                <span class="badge {% if entry.kind == 'tv' %}text-bg-info{% else %}text-bg-secondary{% endif %}">{% if entry.kind == 'tv' %}In progress{% else %}Movie{% endif %}</span>
+                                {% if entry.subtitle %}<span class="text-body-secondary ms-1">{{ entry.subtitle }}</span>{% endif %}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             {% endfor %}
         </div>
 
-        {% if page_obj.paginator.num_pages > 1 %}
+        {% if watchlist_page_obj.paginator.num_pages > 1 %}
         <nav aria-label="Watchlist pagination" class="mt-4">
             <ul class="pagination justify-content-center">
-                {% for page_num in page_obj.paginator.page_range %}
-                <li class="page-item {% if page_num == page_obj.number %}active{% endif %}">
+                {% for page_num in watchlist_page_obj.paginator.page_range %}
+                <li class="page-item {% if page_num == watchlist_page_obj.number %}active{% endif %}">
                     <a class="page-link"
                        hx-get="{% url 'dashboard_watchlist_page' %}?page={{ page_num }}"
                        hx-push-url="false"
@@ -23,6 +40,6 @@
         </nav>
         {% endif %}
     {% else %}
-        <p>Nothing here, start by making a search!</p>
+        <p>Nothing here, start by making a <a href="{% url 'search' %}">search</a>!</p>
     {% endif %}
 </div>

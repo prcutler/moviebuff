@@ -1,7 +1,11 @@
-<div id="dashboard-tv-section" hx-target="#dashboard-tv-section" hx-swap="outerHTML">
-    {% if tv_rows %}
+{% comment %}
+One TV shelf on the dashboard. Everything that differs between the shelves
+arrives in `ctx` from the view, so both render through this one template.
+{% endcomment %}
+<div id="{{ ctx.section_id }}" hx-target="#{{ ctx.section_id }}" hx-swap="outerHTML">
+    {% if ctx.rows %}
         <div class="row g-4">
-            {% for entry in tv_rows %}
+            {% for entry in ctx.rows %}
                 <div class="col-sm-6 col-md-4 col-lg-3">
                     <div class="card h-100">
                         <a href="{{ entry.url }}">
@@ -11,7 +15,7 @@
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">{{ entry.title }}</h5>
-                            {% if entry.finished %}<p class="card-text">{{ entry.finished|date:"Y-m-d" }}</p>{% endif %}
+                            {% if entry.when %}<p class="card-text">{{ entry.when|date:"Y-m-d" }}</p>{% endif %}
                             {% if entry.stars %}<p class="card-text" style="color: #f5c518;">{{ entry.stars }}</p>{% endif %}
                         </div>
                     </div>
@@ -19,13 +23,13 @@
             {% endfor %}
         </div>
 
-        {% if tv_page_obj.paginator.num_pages > 1 %}
-        <nav aria-label="Watched TV pagination" class="mt-4">
+        {% if ctx.page_obj.paginator.num_pages > 1 %}
+        <nav aria-label="{{ ctx.label }} pagination" class="mt-4">
             <ul class="pagination justify-content-center">
-                {% for page_num in tv_page_obj.paginator.page_range %}
-                <li class="page-item {% if page_num == tv_page_obj.number %}active{% endif %}">
+                {% for page_num in ctx.page_obj.paginator.page_range %}
+                <li class="page-item {% if page_num == ctx.page_obj.number %}active{% endif %}">
                     <a class="page-link"
-                       hx-get="{% url 'dashboard_tv_page' %}?page={{ page_num }}"
+                       hx-get="{{ ctx.page_url }}?page={{ page_num }}"
                        hx-push-url="false"
                        href="#">{{ page_num }}</a>
                 </li>

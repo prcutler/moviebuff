@@ -7,7 +7,7 @@
     <h2 id="watchlist-heading" class="mb-4">
         <a href="{% url 'view_all_watchlist' %}">Watchlist</a>
     </h2>
-    {% include 'users/partials/dashboard_watchlist.html' with page_obj=watchlist_page_obj %}
+    {% include 'users/partials/dashboard_watchlist.html' %}
 </section>
 
 <section aria-labelledby="watched-heading" class="mt-5">
@@ -21,7 +21,7 @@
     <h2 id="watched-tv-heading" class="mb-4">
         <a href="{% url 'tv_view_all_shelf' 'watched' %}">Watched TV</a>
     </h2>
-    {% include 'users/partials/dashboard_tv.html' %}
+    {% include 'users/partials/dashboard_tv.html' with ctx=tv_watched %}
 </section>
 
 {% if custom_watchlists %}
