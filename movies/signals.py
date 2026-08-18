@@ -5,7 +5,7 @@ from django.utils.html import escape
 import logging
 
 from .models import Watchlist, Watched
-from fedi.notes import create_note as _create_note
+from fedi.notes import announce
 
 logger = logging.getLogger(__name__)
 
@@ -42,22 +42,41 @@ def store_previous_watched(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Watched)
 def watched_events(sender, instance, created, **kwargs):
-    """Post when a rating or review appears or changes.
+    """Announce when a rating or review appears or changes.
 
     Deliberately does not skip newly created rows: the "Add to Watched" form
     saves the date, rating and review in one step, so a rating that arrives
     with the row is a rating like any other. Logging a viewing with neither
-    stays quiet, because both checks below need something to announce.
+    stays quiet, because there is then nothing to say.
     """
+    changed = set()
+    if instance.rating != getattr(instance, "_prev_rating", None):
+        changed.add("rating")
+    if instance.review != getattr(instance, "_prev_review", ""):
+        changed.add("review")
+    if not changed:
+        return
+
     movie = instance.movie
     url = f"{settings.ACTIVITYPUB_DOMAIN.rstrip('/')}/movies/details/{movie.id}"
+    parts = {
+        "rating": (
+            f"rated {movie.title} ⭐ {instance.rating}/5"
+            if instance.rating is not None
+            else ""
+        ),
+        "review": (
+            f'{escape(instance.review)} <a href="{url}">Read on MovieBuff</a>'
+            if instance.review
+            else ""
+        ),
+    }
 
-    # rating updated
-    if instance.rating is not None and instance.rating != getattr(instance, "_prev_rating", None):
-        content = f"rated {movie.title} ⭐ {instance.rating}/5"
-        _create_note(instance.user, content, url=url, attachment_url=movie.tmdb_poster_path or None)
-    # review created
-    if instance.review and instance.review != getattr(instance, "_prev_review", ""):
-        safe_review = escape(instance.review)
-        content = f"{safe_review} <a href=\"{url}\">Read on MovieBuff</a>"
-        _create_note(instance.user, content, url=url)
+    announce(
+        instance.user,
+        parts,
+        changed,
+        subject_key=f"movie:{movie.id}",
+        url=url,
+        attachment_url=movie.tmdb_poster_path or None,
+    )

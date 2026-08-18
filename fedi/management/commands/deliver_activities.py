@@ -1,4 +1,6 @@
 from django.core.management.base import BaseCommand
+from django.db.models import Q
+from django.utils import timezone
 
 from fedi.models import FediDelivery
 from fedi.tasks import deliver_activity
@@ -13,15 +15,31 @@ class Command(BaseCommand):
             action="store_true",
             help="Also retry deliveries that previously failed",
         )
+        parser.add_argument(
+            "--ignore-holds",
+            action="store_true",
+            help="Send held notes now instead of waiting out their window",
+        )
 
     def handle(self, *args, **options):
         statuses = [FediDelivery.QUEUED]
         if options["retry_failed"]:
             statuses.append(FediDelivery.FAILED)
 
-        deliveries = FediDelivery.objects.filter(status__in=statuses).values_list(
-            "activity_id", "follower_id"
-        )
+        queryset = FediDelivery.objects.filter(status__in=statuses)
+        if not options["ignore_holds"]:
+            # A note still inside its window may yet gain a review, so leave
+            # it for a later sweep and send it as one post.
+            now = timezone.now()
+            held = queryset.filter(activity__hold_until__gt=now).count()
+            queryset = queryset.filter(
+                Q(activity__hold_until__isnull=True)
+                | Q(activity__hold_until__lte=now)
+            )
+            if held:
+                self.stdout.write(f"Holding {held} deliveries still in their window.")
+
+        deliveries = queryset.values_list("activity_id", "follower_id")
         total = deliveries.count()
 
         if total == 0:

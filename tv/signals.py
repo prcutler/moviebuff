@@ -11,7 +11,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils.html import escape
 
-from fedi.notes import create_note
+from fedi.notes import announce
 
 from .models import TvShelf
 
@@ -40,21 +40,38 @@ def store_previous_shelf(sender, instance, **kwargs):
 
 @receiver(post_save, sender=TvShelf)
 def shelf_events(sender, instance, created, **kwargs):
-    """Post when a rating or review appears or changes.
+    """Announce when a rating or review appears or changes.
 
     Shelving alone is deliberately quiet — adding something to a watchlist
     is not news, the same way ``movies`` keeps its watchlist signal off.
     """
-    label = instance.display_title
+    changed = set()
+    if instance.rating != getattr(instance, "_prev_rating", None):
+        changed.add("rating")
+    if instance.review != getattr(instance, "_prev_review", ""):
+        changed.add("review")
+    if not changed:
+        return
+
     url = _subject_url(instance)
+    parts = {
+        "rating": (
+            f"rated {escape(instance.display_title)} ⭐ {instance.rating}/5"
+            if instance.rating is not None
+            else ""
+        ),
+        "review": (
+            f'{escape(instance.review)} <a href="{url}">Read on MovieBuff</a>'
+            if instance.review
+            else ""
+        ),
+    }
 
-    rating = instance.rating
-    if rating is not None and rating != getattr(instance, "_prev_rating", None):
-        content = f"rated {escape(label)} ⭐ {rating}/5"
-        create_note(instance.user, content, url=url, attachment_url=instance.poster or None)
-
-    review = instance.review
-    if review and review != getattr(instance, "_prev_review", ""):
-        safe_review = escape(review)
-        content = f"{safe_review} <a href=\"{url}\">Read on MovieBuff</a>"
-        create_note(instance.user, content, url=url)
+    announce(
+        instance.user,
+        parts,
+        changed,
+        subject_key=f"tvshelf:{instance.pk}",
+        url=url,
+        attachment_url=instance.poster or None,
+    )

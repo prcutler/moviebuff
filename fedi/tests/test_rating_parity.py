@@ -90,7 +90,8 @@ class RatingParityTests(TestCase):
         """The regression this parity fix was really about.
 
         The form saves date, rating and review in one step, so a guard that
-        skipped newly created rows swallowed both posts entirely.
+        skipped newly created rows swallowed both posts entirely. Since the
+        hold window landed they arrive folded into one note rather than two.
         """
         self.client.login(username="alice", password="pwd")
         response = self.client.post(
@@ -104,12 +105,10 @@ class RatingParityTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
 
-        contents = [
-            a.payload["object"]["content"] for a in FediActivity.objects.all()
-        ]
-        self.assertEqual(len(contents), 2)
-        self.assertTrue(any("rated" in c for c in contents))
-        self.assertTrue(any("Loved it." in c for c in contents))
+        self.assertEqual(FediActivity.objects.count(), 1)
+        content = FediActivity.objects.get().payload["object"]["content"]
+        self.assertIn("rated", content)
+        self.assertIn("Loved it.", content)
 
     def test_add_to_watched_form_without_a_rating_stays_quiet(self):
         self.client.login(username="alice", password="pwd")

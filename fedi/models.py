@@ -63,8 +63,21 @@ class FediActivity(models.Model):
     type = models.CharField(max_length=50)
     payload = models.JSONField()
     visibility = models.CharField(max_length=20, default="public")
+    # What this note is about ("movie:7", "tvshelf:12"), so a rating and the
+    # review that follows it can be recognised as the same subject and folded
+    # into one post. Blank for notes that are not about a catalogue entry.
+    subject_key = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    # Do not deliver before this moment. Gives the member a window to add a
+    # review to a rating they just left, so both go out as a single post.
+    hold_until = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def is_held(self, now=None):
+        """Whether this note is still waiting out its hold window."""
+        if self.hold_until is None:
+            return False
+        return self.hold_until > (now or timezone.now())
 
 
 class FediQuoteAuthorization(models.Model):
