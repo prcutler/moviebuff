@@ -50,6 +50,7 @@ LOCALE_PATHS = [
 INSTALLED_APPS = [
     'users',
     'movies',
+    'tv',
     'fedi',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -158,6 +159,10 @@ LOGIN_REDIRECT_URL = '/dashboard/'
 TMDB_API_KEY = env('TMDB_API_KEY')
 
 DOMAIN_NAME = env('DOMAIN_NAME')
+
+# How long a rating waits before delivery, so a review written just after it
+# goes out as part of the same post. Set to 0 to publish immediately.
+FEDI_HOLD_SECONDS = env.int('FEDI_HOLD_SECONDS', default=120)
 
 ACTIVITYPUB_ENABLED = env.bool('ACTIVITYPUB_ENABLED', default=False)
 ACTIVITYPUB_DOMAIN = env('ACTIVITYPUB_DOMAIN', default='')
