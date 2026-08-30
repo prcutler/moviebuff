@@ -7,18 +7,34 @@ from .models import Watched, CustomWatchlist
 
 
 class WatchedForm(forms.ModelForm):
-    watched_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
-    watched_time = forms.TimeField(
-        widget=forms.TimeInput(attrs={'type': 'time'}), required=False
+    # Bootstrap classes are set on the widgets here rather than in the
+    # template: Django's engine has no filter that takes widget attributes,
+    # and the project installs no library that adds one.
+    watched_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
-    is_rewatch = forms.BooleanField(required=False, label="Mark as rewatch")
+    watched_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+        required=False,
+    )
+    # Backed by the model field now, so ticking it is recorded rather than
+    # only bumping the counter on an entry that already existed.
+    rewatch = forms.BooleanField(
+        required=False,
+        label="Re-watch",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
 
     class Meta:
         model = Watched
-        fields = ['watched_date', 'watched_time', 'rating', 'review', 'is_rewatch']
+        fields = ['watched_date', 'watched_time', 'rating', 'review', 'rewatch']
         widgets = {
-            'rating': forms.NumberInput(attrs={'step': 0.5, 'min': 0, 'max': 5}),
-            'review': forms.Textarea(attrs={'maxlength': 300}),
+            'rating': forms.NumberInput(
+                attrs={'step': 0.5, 'min': 0, 'max': 5, 'class': 'form-control'}
+            ),
+            'review': forms.Textarea(
+                attrs={'maxlength': 300, 'class': 'form-control'}
+            ),
         }
 
     def save(self, commit=True):

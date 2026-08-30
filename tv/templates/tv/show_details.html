@@ -37,7 +37,10 @@
         {% url 'tv_set_state' show.id as state_url %}
         {% url 'tv_update_rating' show.id as rating_url %}
         {% url 'tv_submit_review' show.id as review_url %}
-        {% include 'tv/components/shelf_controls.html' with state_url=state_url rating_url=rating_url review_url=review_url %}
+        {% url 'tv_set_rewatch' show.id as rewatch_url %}
+        {% include 'tv/components/shelf_controls.html' with state_url=state_url rating_url=rating_url review_url=review_url rewatch_url=rewatch_url %}
+    {% else %}
+        {% include 'tv/components/shelf_readonly.html' %}
     {% endif %}
 
     <section aria-labelledby="seasons-title" class="mb-4">

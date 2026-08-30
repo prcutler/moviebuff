@@ -38,7 +38,10 @@
         {% url 'tv_set_season_state' show.id season.season_number as state_url %}
         {% url 'tv_update_season_rating' show.id season.season_number as rating_url %}
         {% url 'tv_submit_season_review' show.id season.season_number as review_url %}
-        {% include 'tv/components/shelf_controls.html' with state_url=state_url rating_url=rating_url review_url=review_url %}
+        {% url 'tv_set_season_rewatch' show.id season.season_number as rewatch_url %}
+        {% include 'tv/components/shelf_controls.html' with state_url=state_url rating_url=rating_url review_url=review_url rewatch_url=rewatch_url %}
+    {% else %}
+        {% include 'tv/components/shelf_readonly.html' %}
     {% endif %}
 
     {% if other_reviews %}

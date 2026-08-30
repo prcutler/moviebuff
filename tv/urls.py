@@ -20,6 +20,7 @@ urlpatterns = [
     path("state/<int:show_id>/", views.set_state, name="tv_set_state"),
     path("rating/<int:show_id>/", views.update_rating, name="tv_update_rating"),
     path("review/<int:show_id>/", views.submit_review, name="tv_submit_review"),
+    path("rewatch/<int:show_id>/", views.set_rewatch, name="tv_set_rewatch"),
     # Season-level actions, same handlers with the season named.
     path(
         "state/<int:show_id>/season/<int:season_number>/",
@@ -35,6 +36,11 @@ urlpatterns = [
         "review/<int:show_id>/season/<int:season_number>/",
         views.submit_review,
         name="tv_submit_season_review",
+    ),
+    path(
+        "rewatch/<int:show_id>/season/<int:season_number>/",
+        views.set_rewatch,
+        name="tv_set_season_rewatch",
     ),
     path("shelf/<str:state>/", views.view_all_shelf, name="tv_view_all_shelf"),
 ]

@@ -113,6 +113,8 @@ class TvShelf(models.Model):
         validators=[MinValueValidator(0.0), MaxValueValidator(5.0)],
     )
     review = models.TextField(blank=True, default="", max_length=300)
+    # Whether this was a rewatch rather than a first time through.
+    rewatch = models.BooleanField(default=False)
     # When the member finished it. Null until the state reaches "watched".
     watched_date = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

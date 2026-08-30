@@ -54,12 +54,28 @@
                 <p><strong>TMDB Vote Average:</strong> {{ movie.tmdb_vote_average }}/10 ({{ movie.tmdb_vote_count }} votes)</p>
             </section>
 
-            {% if user.is_authenticated %}
             <section aria-labelledby="user-data-title">
                 <h3 id="user-data-title">User Data</h3>
                 {% if is_watched %}
                     <p><strong>Watched Date:</strong> {{ watched_entry.watched_date|date:"m/d/Y H:i" }}{% if watched_entry.rewatch_count > 1 %} (Rewatch #{{ watched_entry.rewatch_count }}){% endif %}</p>
+                    <p><strong>Re-watch:</strong> {% if watched_entry.rewatch %}Y{% else %}N{% endif %}</p>
                 {% endif %}
+
+                {% if not user.is_authenticated %}
+                    {% comment %}Read-only for a visitor: the same facts, none of the controls.{% endcomment %}
+                    <p class="mb-1"><strong>Rating:</strong> {% if watched_entry.rating is not None %}{{ watched_entry.rating }}/5{% else %}Not rated{% endif %}</p>
+                    {% if watched_entry.rating is not None %}
+                        <div class="d-flex rating mb-3" role="img" aria-label="Rated {{ watched_entry.rating }} out of 5">
+                            {% for _ in "12345" %}
+                                <span class="star"><i class="bi {% if user_rating >= forloop.counter %}bi-star-fill{% else %}bi-star{% endif %}">★</i></span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if watched_entry.review %}
+                        <p class="mb-1"><strong>Review:</strong></p>
+                        <p>{{ watched_entry.review }}</p>
+                    {% endif %}
+                {% else %}
 
                 <form id="rating-form" data-url="{% url 'update_rating' movie.id %}" class="mb-3">
                     <fieldset class="border-0 p-0 m-0">
@@ -83,8 +99,14 @@
                 </form>
                 <div id="current-review" class="mt-2">{{ watched_entry.review }}</div>
 
+                {% comment %}Only offered while adding; removing an entry has no rewatch to record.{% endcomment %}
+                <div id="rewatch-wrap" class="form-check mt-2{% if is_watched %} d-none{% endif %}">
+                    <input type="checkbox" class="form-check-input" id="rewatch-check" name="rewatch" {% if watched_entry.rewatch %}checked{% endif %}>
+                    <label class="form-check-label" for="rewatch-check">Re-watch</label>
+                </div>
+
                 <div class="d-flex flex-wrap gap-2 mt-2">
-                    <button id="watched-toggle" class="btn btn-primary btn-sm" data-url="{% url 'toggle_watched' movie.id %}">
+                    <button id="watched-toggle" class="btn btn-primary btn-sm" data-url="{% url 'toggle_watched' movie.id %}" data-checkbox="rewatch-check">
                         {% if is_watched %}Remove from Watched{% else %}Add to Watched{% endif %}
                     </button>
 
@@ -110,8 +132,8 @@
                         {% endfor %}
                     </ul>
                 {% endif %}
+                {% endif %}{# end of the signed-in controls #}
             </section>
-            {% endif %}
         </div>
     </div>
 </section>
@@ -147,17 +169,27 @@ function handleToggle(button) {
     const originalText = button.textContent;
     button.disabled = true;
     button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+    // A button may name a checkbox whose value travels with the request.
+    const box = button.dataset.checkbox
+        ? document.getElementById(button.dataset.checkbox)
+        : null;
     fetch(url, {
         method: 'POST',
         headers: {
             'X-CSRFToken': csrftoken,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/x-www-form-urlencoded'
         },
+        body: box && box.checked ? new URLSearchParams({rewatch: 'on'}) : null,
     })
     .then(response => response.json())
     .then(data => {
         showToast(data.message, data.success ? 'success' : 'danger');
         button.textContent = data.new_label || originalText;
+        // The checkbox belongs to the add action, so it follows the state.
+        const wrap = document.getElementById('rewatch-wrap');
+        if (wrap && box) {
+            wrap.classList.toggle('d-none', data.new_label === 'Remove from Watched');
+        }
     })
     .catch(() => {
         showToast('An error occurred', 'danger');
@@ -168,6 +200,10 @@ function handleToggle(button) {
     });
 }
 
+{% if user.is_authenticated %}
+{# Everything below drives the User Data controls, which are only rendered
+   for a signed-in member. Emitting it for a visitor threw on the first
+   getElementById and aborted the rest of the script. #}
 document.getElementById('watchlist-toggle').addEventListener('click', function() {
     handleToggle(this);
 });
@@ -280,5 +316,6 @@ reviewForm.addEventListener('submit', (e) => {
     })
     .catch(() => showToast('An error occurred', 'danger'));
 });
+{% endif %}
 </script>
 {% endblock %}

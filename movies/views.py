@@ -66,19 +66,25 @@ def movie_details(request, movie_id):
     public_watched = Watched.objects.filter(movie=movie, rating__isnull=False).first()
     public_rating = int(public_watched.rating) if public_watched else 0
 
-    # User-specific data only for authenticated users
-    is_watched = False
     is_in_watchlist = False
-    watched_entry = None
-    user_rating = 0
     custom_watchlists = []
 
     if request.user.is_authenticated:
-        is_watched = Watched.objects.filter(user=request.user, movie=movie).exists()
-        is_in_watchlist = Watchlist.objects.filter(user=request.user, movie=movie).exists()
         watched_entry = Watched.objects.filter(user=request.user, movie=movie).first()
-        user_rating = int(watched_entry.rating) if watched_entry and watched_entry.rating is not None else 0
+        is_in_watchlist = Watchlist.objects.filter(user=request.user, movie=movie).exists()
         custom_watchlists = CustomWatchlist.objects.filter(items__movie=movie, users=request.user).distinct()
+    else:
+        # This is one member's catalogue, so the entry is shown to visitors
+        # the way the reviews below already are — read-only, no controls.
+        # Watchlist membership stays private: it is a plan, not a record.
+        watched_entry = Watched.objects.filter(movie=movie).order_by('id').first()
+
+    is_watched = watched_entry is not None
+    user_rating = (
+        int(watched_entry.rating)
+        if watched_entry and watched_entry.rating is not None
+        else 0
+    )
 
     return render(request, 'movies/movie_details.html', {
         'movie': movie,
@@ -128,7 +134,12 @@ def toggle_watched(request, movie_id):
             'new_label': 'Add to Watched',
         })
     else:
-        Watched.objects.create(user=request.user, movie=movie, watched_date=timezone.now())
+        Watched.objects.create(
+            user=request.user,
+            movie=movie,
+            watched_date=timezone.now(),
+            rewatch=bool(request.POST.get('rewatch')),
+        )
         return JsonResponse({
             'success': True,
             'message': 'Added to watched',
@@ -141,11 +152,12 @@ def add_to_watched(request, movie_id):
     if request.method == 'POST':
         form = WatchedForm(request.POST)
         if form.is_valid():
-            is_rewatch = form.cleaned_data.get('is_rewatch')
+            is_rewatch = form.cleaned_data.get('rewatch')
             instance = form.save(commit=False)
             if existing:
                 if is_rewatch:
                     existing.rewatch_count += 1
+                existing.rewatch = is_rewatch
                 existing.watched_date = instance.watched_date
                 existing.rating = form.cleaned_data.get('rating')
                 existing.review = form.cleaned_data.get('review')

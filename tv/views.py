@@ -26,11 +26,16 @@ def handle_tmdb_redirect(request, tmdb_id):
 
 
 def _shelf_for(user, *, show=None, season=None):
-    if not user.is_authenticated:
-        return None
-    if season is not None:
-        return TvShelf.objects.filter(user=user, season=season).first()
-    return TvShelf.objects.filter(user=user, show=show).first()
+    """The shelf row to display for this subject.
+
+    This is one member's catalogue, so a visitor is shown the entry rather
+    than nothing — read-only, the same way the movie pages do it.
+    """
+    subject = {"season": season} if season is not None else {"show": show}
+    entries = TvShelf.objects.filter(**subject)
+    if user.is_authenticated:
+        return entries.filter(user=user).first()
+    return entries.order_by("id").first()
 
 
 def tv_show_details(request, show_id):
@@ -175,6 +180,19 @@ def update_rating(request, show_id, season_number=None):
         shelf.state = TvShelf.WATCHED
     if shelf.state == TvShelf.WATCHED and shelf.watched_date is None:
         shelf.watched_date = timezone.now()
+    shelf.save()
+    return _redirect_to_subject(show_id, season_number)
+
+
+@login_required
+@require_POST
+def set_rewatch(request, show_id, season_number=None):
+    """Record whether this is a rewatch. Absent checkbox means no."""
+    subject = _resolve_subject(show_id, season_number)
+    shelf, _ = TvShelf.objects.get_or_create(
+        user=request.user, defaults={"state": TvShelf.WATCHING}, **subject
+    )
+    shelf.rewatch = bool(request.POST.get("rewatch"))
     shelf.save()
     return _redirect_to_subject(show_id, season_number)
 

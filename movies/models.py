@@ -22,6 +22,9 @@ class Watched(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     watched_date = models.DateTimeField()
+    # Whether this viewing was a rewatch. The count below still tracks how
+    # many times, so a member who had rewatched something keeps that history.
+    rewatch = models.BooleanField(default=False)
     rewatch_count = models.PositiveIntegerField(default=1)
     rating = models.FloatField(
         validators=[MinValueValidator(0.0), MaxValueValidator(5.0)],

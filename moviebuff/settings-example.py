@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # movie_details.html loads it for intcomma on the budget.
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [

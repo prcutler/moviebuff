@@ -1,8 +1,8 @@
 {% comment %}
-Shelf state, rating and review controls. Used by both the show and the
-season page; the caller passes the URLs so the same markup serves either
-level. Expects: state_url, rating_url, review_url, user_shelf, user_rating,
-state_choices.
+Shelf state, rating, rewatch and review controls. Used by both the show and
+the season page; the caller passes the URLs so the same markup serves either
+level. Expects: state_url, rating_url, rewatch_url, review_url, user_shelf,
+user_rating, state_choices.
 {% endcomment %}
 <div class="card mb-4">
     <div class="card-body">
@@ -31,6 +31,17 @@ state_choices.
                     {% endfor %}
                 </select>
                 <button class="btn btn-sm btn-primary" type="submit">Save rating</button>
+            </div>
+        </form>
+
+        <form method="post" action="{{ rewatch_url }}" class="mb-3">
+            {% csrf_token %}
+            <div class="d-flex align-items-center gap-2">
+                <div class="form-check mb-0">
+                    <input type="checkbox" class="form-check-input" id="rewatch-{{ rewatch_url|slugify }}" name="rewatch" {% if user_shelf.rewatch %}checked{% endif %}>
+                    <label class="form-check-label" for="rewatch-{{ rewatch_url|slugify }}">Re-watch</label>
+                </div>
+                <button class="btn btn-sm btn-primary" type="submit">Save</button>
             </div>
         </form>
 

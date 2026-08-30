@@ -1,0 +1,31 @@
+{% comment %}
+What a visitor sees in place of the tracking controls: the same facts,
+none of the controls. Expects: user_shelf, user_rating.
+{% endcomment %}
+{% if user_shelf %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h6 text-body-secondary mb-3">Tracking</h2>
+
+        <p class="mb-1"><strong>Status:</strong> {{ user_shelf.get_state_display }}</p>
+        <p class="mb-1"><strong>Re-watch:</strong> {% if user_shelf.rewatch %}Y{% else %}N{% endif %}</p>
+        {% if user_shelf.watched_date %}
+            <p class="mb-1"><strong>Watched:</strong> {{ user_shelf.watched_date|date:"m/d/Y" }}</p>
+        {% endif %}
+
+        <p class="mb-1"><strong>Rating:</strong> {% if user_shelf.rating is not None %}{{ user_shelf.rating|floatformat:1 }}/5{% else %}Not rated{% endif %}</p>
+        {% if user_shelf.rating is not None %}
+            <div class="d-flex mb-3" role="img" aria-label="Rated {{ user_shelf.rating|floatformat:1 }} out of 5">
+                {% for _ in "12345" %}
+                    <span style="color: #f5c518">{% if user_rating >= forloop.counter %}★{% else %}☆{% endif %}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if user_shelf.review %}
+            <p class="mb-1"><strong>Review:</strong></p>
+            <p class="mb-0">{{ user_shelf.review }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
