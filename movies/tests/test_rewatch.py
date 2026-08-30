@@ -131,18 +131,6 @@ class ToggleWatchedRewatchTests(TestCase):
         self.assertContains(response, 'id="rewatch-check"')
         self.assertContains(response, "Re-watch")
 
-    def test_the_checkbox_is_hidden_once_watched(self):
-        """Removing an entry has no rewatch to record."""
-        Watched.objects.create(
-            user=self.user, movie=self.movie, watched_date=timezone.now()
-        )
-        response = self.client.get(f"/movies/details/{self.movie.id}/")
-        self.assertContains(response, 'id="rewatch-wrap" class="form-check mt-2 d-none"')
-
-    def test_the_checkbox_is_visible_when_not_watched(self):
-        response = self.client.get(f"/movies/details/{self.movie.id}/")
-        self.assertContains(response, 'id="rewatch-wrap" class="form-check mt-2"')
-
     def test_a_recorded_rewatch_reads_yes(self):
         Watched.objects.create(
             user=self.user,
@@ -151,14 +139,14 @@ class ToggleWatchedRewatchTests(TestCase):
             rewatch=True,
         )
         response = self.client.get(f"/movies/details/{self.movie.id}/")
-        self.assertContains(response, "<strong>Re-watch:</strong> Y", html=False)
+        self.assertContains(response, '<span id="rewatch-status">Y</span>', html=False)
 
     def test_a_first_viewing_reads_no(self):
         Watched.objects.create(
             user=self.user, movie=self.movie, watched_date=timezone.now()
         )
         response = self.client.get(f"/movies/details/{self.movie.id}/")
-        self.assertContains(response, "<strong>Re-watch:</strong> N", html=False)
+        self.assertContains(response, '<span id="rewatch-status">N</span>', html=False)
 
     def test_the_line_is_absent_until_watched(self):
         """User Data has no watched entry to describe yet."""
@@ -282,7 +270,7 @@ class PublicUserDataTests(TestCase):
         self._watch(rewatch=True)
         response = self._page()
         self.assertContains(response, "Watched Date:")
-        self.assertContains(response, "<strong>Re-watch:</strong> Y", html=False)
+        self.assertContains(response, '<span id="rewatch-status">Y</span>', html=False)
 
     def _user_data_block(self):
         html = self._page().content.decode()
@@ -342,3 +330,123 @@ class PublicUserDataTests(TestCase):
             'id="rewatch-check"',
         ]:
             self.assertIn(control, html)
+
+
+@override_settings(ROOT_URLCONF="moviebuff.urls")
+class EditRewatchOnWatchedMovieTests(TestCase):
+    """Correcting the flag on a movie already marked watched."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username="alice", password="pwd")
+        self.movie = Movie.objects.create(
+            tmdb_id=1,
+            title="The Martian",
+            overview="Stranded.",
+            release_date="2015-10-02",
+            original_language="en",
+            budget="108000000",
+            runtime="144",
+            tmdb_vote_average=8,
+            tmdb_vote_count=1000,
+            imdb_id="tt3659388",
+            tmdb_poster_path="https://img.example/m.jpg",
+            last_updated=int(time.time()),
+        )
+        self.client.login(username="alice", password="pwd")
+
+    def _watch(self, **kwargs):
+        return Watched.objects.create(
+            user=self.user,
+            movie=self.movie,
+            watched_date=timezone.now(),
+            **kwargs,
+        )
+
+    def test_turning_it_on(self):
+        self._watch()
+        response = self.client.post(
+            f"/movies/rewatch/{self.movie.id}/", {"rewatch": "on"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["rewatch"])
+        self.assertTrue(Watched.objects.get().rewatch)
+
+    def test_turning_it_off(self):
+        self._watch(rewatch=True)
+        response = self.client.post(f"/movies/rewatch/{self.movie.id}/", {})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["rewatch"])
+        self.assertFalse(Watched.objects.get().rewatch)
+
+    def test_the_checkbox_is_offered_on_an_already_watched_movie(self):
+        self._watch(rewatch=True)
+        response = self.client.get(f"/movies/details/{self.movie.id}/")
+        self.assertContains(response, 'id="rewatch-check"')
+        self.assertNotContains(response, "d-none")
+        # And reflects what is stored.
+        html = response.content.decode()
+        box = html[html.index('id="rewatch-check"'):]
+        self.assertIn("checked", box[: box.index(">")])
+
+    def test_the_button_reports_whether_an_entry_exists(self):
+        """The JS reads data-watched to decide where a change should go."""
+        unwatched = self.client.get(f"/movies/details/{self.movie.id}/")
+        self.assertContains(unwatched, 'data-watched="false"')
+
+        self._watch()
+        watched = self.client.get(f"/movies/details/{self.movie.id}/")
+        self.assertContains(watched, 'data-watched="true"')
+
+    def test_it_will_not_invent_an_entry(self):
+        """Ticking a box is not a claim to have seen something."""
+        response = self.client.post(
+            f"/movies/rewatch/{self.movie.id}/", {"rewatch": "on"}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Watched.objects.count(), 0)
+
+    def test_it_leaves_the_rating_and_review_alone(self):
+        self._watch(rating=4.0, review="Great.")
+        self.client.post(f"/movies/rewatch/{self.movie.id}/", {"rewatch": "on"})
+        watched = Watched.objects.get()
+        self.assertEqual(watched.rating, 4.0)
+        self.assertEqual(watched.review, "Great.")
+        self.assertTrue(watched.rewatch)
+
+    def test_it_does_not_touch_another_members_entry(self):
+        User = get_user_model()
+        bob = User.objects.create_user(username="bob", password="pwd")
+        Watched.objects.create(
+            user=bob, movie=self.movie, watched_date=timezone.now()
+        )
+        response = self.client.post(
+            f"/movies/rewatch/{self.movie.id}/", {"rewatch": "on"}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Watched.objects.get(user=bob).rewatch)
+
+    def test_it_requires_login(self):
+        self._watch()
+        self.client.logout()
+        response = self.client.post(
+            f"/movies/rewatch/{self.movie.id}/", {"rewatch": "on"}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Watched.objects.get().rewatch)
+
+    def test_editing_it_does_not_federate(self):
+        from fedi.models import FediActivity
+
+        profile = self.user.userprofile
+        profile.fedi_enabled = True
+        profile.save()
+        self._watch(rating=4.0)
+        FediActivity.objects.all().delete()
+        with override_settings(
+            ACTIVITYPUB_ENABLED=True, ACTIVITYPUB_DOMAIN="https://example.com"
+        ):
+            self.client.post(
+                f"/movies/rewatch/{self.movie.id}/", {"rewatch": "on"}
+            )
+            self.assertEqual(FediActivity.objects.count(), 0)

@@ -11,6 +11,7 @@ urlpatterns = [
     path('watchlist/remove/<int:movie_id>/', views.remove_from_watchlist, name='remove_from_watchlist'),
     path('details/<int:movie_id>/', views.movie_details, name='movie_details'),
     path('rating/<int:movie_id>/', views.update_rating, name='update_rating'),
+    path('rewatch/<int:movie_id>/', views.update_rewatch, name='update_rewatch'),
     path('review/<int:movie_id>/', views.submit_review, name='submit_review'),
     path('search/tmdb/<int:tmdb_id>/', views.handle_tmdb_redirect, name='handle_movie_redirect'),
     path('custom_watchlist/remove/<int:movie_id>/<int:watchlist_id>/', views.remove_from_custom_watchlist, name='remove_from_custom_watchlist'),

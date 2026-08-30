@@ -327,6 +327,31 @@ def update_rating(request, movie_id):
 
 @login_required
 @require_POST
+def update_rewatch(request, movie_id):
+    """Change the rewatch flag on a movie already marked watched.
+
+    Unlike the rating, this does not create an entry: ticking a box is not a
+    claim to have seen something. Adding a movie carries its own checkbox.
+    """
+    movie = get_object_or_404(Movie, id=movie_id)
+    watched = Watched.objects.filter(user=request.user, movie=movie).first()
+    if watched is None:
+        return JsonResponse({
+            'success': False,
+            'message': 'Mark it as watched first',
+        }, status=400)
+
+    watched.rewatch = bool(request.POST.get('rewatch'))
+    watched.save()
+    return JsonResponse({
+        'success': True,
+        'message': 'Re-watch saved',
+        'rewatch': watched.rewatch,
+    })
+
+
+@login_required
+@require_POST
 def submit_review(request, movie_id):
     movie = get_object_or_404(Movie, id=movie_id)
     review_text = request.POST.get('review', '').strip()
