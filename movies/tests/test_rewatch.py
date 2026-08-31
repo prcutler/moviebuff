@@ -148,10 +148,29 @@ class ToggleWatchedRewatchTests(TestCase):
         response = self.client.get(f"/movies/details/{self.movie.id}/")
         self.assertContains(response, '<span id="rewatch-status">N</span>', html=False)
 
-    def test_the_line_is_absent_until_watched(self):
-        """User Data has no watched entry to describe yet."""
+    def test_the_facts_are_rendered_but_hidden_until_watched(self):
+        """Present so script can reveal them without a reload, but not shown."""
+        html = self.client.get(
+            f"/movies/details/{self.movie.id}/"
+        ).content.decode()
+        block = html[html.index('id="watched-facts"'):]
+        self.assertIn("d-none", block[: block.index(">")])
+
+    def test_the_facts_are_shown_once_watched(self):
+        Watched.objects.create(
+            user=self.user, movie=self.movie, watched_date=timezone.now()
+        )
+        html = self.client.get(
+            f"/movies/details/{self.movie.id}/"
+        ).content.decode()
+        block = html[html.index('id="watched-facts"'):]
+        self.assertNotIn("d-none", block[: block.index(">")])
+
+    def test_a_visitor_sees_no_facts_block_when_nothing_is_watched(self):
+        """A visitor runs no script, so an empty hidden block is pointless."""
+        self.client.logout()
         response = self.client.get(f"/movies/details/{self.movie.id}/")
-        self.assertNotContains(response, "<strong>Re-watch:</strong>", html=False)
+        self.assertNotContains(response, 'id="watched-facts"')
 
     def test_the_line_sits_under_watched_date(self):
         Watched.objects.create(
@@ -381,11 +400,15 @@ class EditRewatchOnWatchedMovieTests(TestCase):
 
     def test_the_checkbox_is_offered_on_an_already_watched_movie(self):
         self._watch(rewatch=True)
-        response = self.client.get(f"/movies/details/{self.movie.id}/")
-        self.assertContains(response, 'id="rewatch-check"')
-        self.assertNotContains(response, "d-none")
-        # And reflects what is stored.
-        html = response.content.decode()
+        html = self.client.get(
+            f"/movies/details/{self.movie.id}/"
+        ).content.decode()
+
+        # Scoped to the wrapper: 'd-none' also appears in the script that
+        # shows and hides the facts block.
+        wrap = html[html.index('id="rewatch-wrap"'):]
+        self.assertNotIn("d-none", wrap[: wrap.index(">")])
+
         box = html[html.index('id="rewatch-check"'):]
         self.assertIn("checked", box[: box.index(">")])
 
@@ -450,3 +473,102 @@ class EditRewatchOnWatchedMovieTests(TestCase):
                 f"/movies/rewatch/{self.movie.id}/", {"rewatch": "on"}
             )
             self.assertEqual(FediActivity.objects.count(), 0)
+
+
+@override_settings(ROOT_URLCONF="moviebuff.urls")
+class RewatchSurvivesEntryCreationTests(TestCase):
+    """Rating and reviewing also create the entry, so they must carry the box.
+
+    Ticking Re-watch on a movie that is not yet watched saves nothing on its
+    own — the value rides along with whatever creates the entry. Rating and
+    reviewing both get_or_create, so both have to pass it through.
+    """
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username="alice", password="pwd")
+        self.movie = Movie.objects.create(
+            tmdb_id=1,
+            title="The Martian",
+            overview="Stranded.",
+            release_date="2015-10-02",
+            original_language="en",
+            budget="108000000",
+            runtime="144",
+            tmdb_vote_average=8,
+            tmdb_vote_count=1000,
+            imdb_id="tt3659388",
+            tmdb_poster_path="https://img.example/m.jpg",
+            last_updated=int(time.time()),
+        )
+        self.client.login(username="alice", password="pwd")
+
+    def test_rating_an_unwatched_movie_keeps_a_ticked_box(self):
+        response = self.client.post(
+            f"/movies/rating/{self.movie.id}/", {"rating": "4", "rewatch": "on"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["rewatch"])
+        watched = Watched.objects.get()
+        self.assertEqual(watched.rating, 4.0)
+        self.assertTrue(watched.rewatch)
+
+    def test_reviewing_an_unwatched_movie_keeps_a_ticked_box(self):
+        response = self.client.post(
+            f"/movies/review/{self.movie.id}/",
+            {"review": "Great.", "rewatch": "on"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["rewatch"])
+        self.assertTrue(Watched.objects.get().rewatch)
+
+    def test_an_empty_value_clears_the_flag(self):
+        Watched.objects.create(
+            user=self.user,
+            movie=self.movie,
+            watched_date=timezone.now(),
+            rewatch=True,
+        )
+        self.client.post(
+            f"/movies/rating/{self.movie.id}/", {"rating": "4", "rewatch": ""}
+        )
+        self.assertFalse(Watched.objects.get().rewatch)
+
+    def test_omitting_the_key_leaves_the_flag_alone(self):
+        """A caller that never sends it must not clobber what is stored."""
+        Watched.objects.create(
+            user=self.user,
+            movie=self.movie,
+            watched_date=timezone.now(),
+            rewatch=True,
+        )
+        self.client.post(f"/movies/rating/{self.movie.id}/", {"rating": "5"})
+        watched = Watched.objects.get()
+        self.assertEqual(watched.rating, 5.0)
+        self.assertTrue(watched.rewatch)
+
+    def test_the_reported_flag_matches_what_was_stored(self):
+        """The JS updates the Y/N line from this, so it must be truthful."""
+        response = self.client.post(
+            f"/movies/rating/{self.movie.id}/", {"rating": "3", "rewatch": "on"}
+        )
+        self.assertEqual(
+            response.json()["rewatch"], Watched.objects.get().rewatch
+        )
+
+    def test_the_full_flow_from_the_users_report(self):
+        """Add a movie, tick Re-watch, then rate it."""
+        # Ticking alone sends nothing while no entry exists.
+        self.assertEqual(Watched.objects.count(), 0)
+        # Rating carries the box.
+        self.client.post(
+            f"/movies/rating/{self.movie.id}/", {"rating": "4", "rewatch": "on"}
+        )
+        watched = Watched.objects.get()
+        self.assertTrue(watched.rewatch, "the ticked box was lost")
+
+        # And the page then shows it.
+        response = self.client.get(f"/movies/details/{self.movie.id}/")
+        self.assertContains(
+            response, '<span id="rewatch-status">Y</span>', html=False
+        )

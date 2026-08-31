@@ -56,9 +56,17 @@
 
             <section aria-labelledby="user-data-title">
                 <h3 id="user-data-title">User Data</h3>
-                {% if is_watched %}
-                    <p><strong>Watched Date:</strong> {{ watched_entry.watched_date|date:"m/d/Y H:i" }}{% if watched_entry.rewatch_count > 1 %} (Rewatch #{{ watched_entry.rewatch_count }}){% endif %}</p>
+                {% comment %}
+                For a signed-in member this is always rendered and merely
+                hidden while nothing is watched, so adding or rating a movie
+                can reveal it without a reload. A visitor has no scripts, so
+                it is only rendered when there is something to show.
+                {% endcomment %}
+                {% if is_watched or user.is_authenticated %}
+                <div id="watched-facts"{% if not is_watched %} class="d-none"{% endif %}>
+                    <p><strong>Watched Date:</strong> <span id="watched-date">{{ watched_entry.watched_date|date:"m/d/Y H:i" }}</span>{% if watched_entry.rewatch_count > 1 %} (Rewatch #{{ watched_entry.rewatch_count }}){% endif %}</p>
                     <p><strong>Re-watch:</strong> <span id="rewatch-status">{% if watched_entry.rewatch %}Y{% else %}N{% endif %}</span></p>
+                </div>
                 {% endif %}
 
                 {% if not user.is_authenticated %}
@@ -192,10 +200,12 @@ function handleToggle(button) {
         if (box) {
             // Whether an entry now exists decides where a later change to the
             // checkbox goes: saved on its own, or carried by the next add.
-            const nowWatched = data.new_label === 'Remove from Watched';
-            button.dataset.watched = nowWatched ? 'true' : 'false';
-            if (!nowWatched) box.checked = false;
-            setRewatchStatus(nowWatched ? box.checked : null);
+            if (data.new_label === 'Remove from Watched') {
+                markWatchedEntryExists(data);
+            } else {
+                box.checked = false;
+                markWatchedEntryGone();
+            }
         }
     })
     .catch(() => {
@@ -219,6 +229,36 @@ getElementById and aborted the rest of the script.
 function setRewatchStatus(value) {
     const status = document.getElementById('rewatch-status');
     if (status && value !== null) status.textContent = value ? 'Y' : 'N';
+}
+
+// Sent with anything that may create the watched entry. Always present as a
+// key, so an empty value clears the flag rather than leaving it untouched.
+function rewatchValue() {
+    const box = document.getElementById('rewatch-check');
+    return box && box.checked ? 'on' : '';
+}
+
+// An entry now exists: later checkbox changes save on their own, and the
+// facts block is revealed and filled from what the server just stored.
+function markWatchedEntryExists(data) {
+    const button = document.getElementById('watched-toggle');
+    if (button) button.dataset.watched = 'true';
+
+    const facts = document.getElementById('watched-facts');
+    if (facts) facts.classList.remove('d-none');
+
+    const date = document.getElementById('watched-date');
+    if (date && data && data.watched_date) date.textContent = data.watched_date;
+
+    setRewatchStatus(data && data.rewatch !== undefined ? data.rewatch : null);
+}
+
+// The entry is gone, so there are no facts left to describe.
+function markWatchedEntryGone() {
+    const button = document.getElementById('watched-toggle');
+    if (button) button.dataset.watched = 'false';
+    const facts = document.getElementById('watched-facts');
+    if (facts) facts.classList.add('d-none');
 }
 
 document.getElementById('watchlist-toggle').addEventListener('click', function() {
@@ -245,7 +285,7 @@ rewatchBox.addEventListener('change', function() {
     .then(res => res.json())
     .then(data => {
         showToast(data.message, data.success ? 'success' : 'danger');
-        if (data.success) setRewatchStatus(data.rewatch);
+        if (data.success) markWatchedEntryExists(data);
         else this.checked = !checked;
     })
     .catch(() => {
@@ -286,7 +326,9 @@ ratingInputs.forEach(input => {
                 'X-CSRFToken': csrftoken,
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
-            body: new URLSearchParams({rating: value})
+            // Rating creates the entry when there is none, so the checkbox
+            // travels with it or its value would be lost.
+            body: new URLSearchParams({rating: value, rewatch: rewatchValue()})
         })
         .then(res => res.json())
         .then(data => {
@@ -299,6 +341,9 @@ ratingInputs.forEach(input => {
                 if (watchedBtn && watchedBtn.textContent.trim() === 'Add to Watched') {
                     watchedBtn.textContent = 'Remove from Watched';
                 }
+                // The rating just created the entry, so the checkbox now has
+                // something of its own to update.
+                markWatchedEntryExists(data);
             }
         })
         .catch(() => showToast('An error occurred', 'danger'));
@@ -346,7 +391,7 @@ reviewForm.addEventListener('submit', (e) => {
             'X-CSRFToken': csrftoken,
             'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: new URLSearchParams({review: text})
+        body: new URLSearchParams({review: text, rewatch: rewatchValue()})
     })
     .then(res => res.json())
     .then(data => {
@@ -355,6 +400,7 @@ reviewForm.addEventListener('submit', (e) => {
             reviewDisplay.textContent = data.review;
             reviewText.value = data.review;
             reviewCount.textContent = data.review.length;
+            markWatchedEntryExists(data);
         }
     })
     .catch(() => showToast('An error occurred', 'danger'));

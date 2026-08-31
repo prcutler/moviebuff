@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.timezone import localtime
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.utils.html import escape
@@ -134,7 +135,7 @@ def toggle_watched(request, movie_id):
             'new_label': 'Add to Watched',
         })
     else:
-        Watched.objects.create(
+        watched = Watched.objects.create(
             user=request.user,
             movie=movie,
             watched_date=timezone.now(),
@@ -144,6 +145,7 @@ def toggle_watched(request, movie_id):
             'success': True,
             'message': 'Added to watched',
             'new_label': 'Remove from Watched',
+            **_watched_facts(watched),
         })
 
 def add_to_watched(request, movie_id):
@@ -316,13 +318,39 @@ def update_rating(request, movie_id):
         defaults={'watched_date': timezone.now()}
     )
     watched.rating = rating
+    _apply_rewatch(watched, request)
     watched.save()
 
     return JsonResponse({
         'success': True,
         'message': 'Rating saved',
-        'rating': rating
+        'rating': rating,
+        **_watched_facts(watched),
     })
+
+
+def _watched_facts(watched):
+    """What the User Data block needs to show an entry it did not render.
+
+    Matches the template's own formatting, so a block revealed by script
+    reads the same as one drawn by the server.
+    """
+    return {
+        'rewatch': watched.rewatch,
+        'watched_date': localtime(watched.watched_date).strftime('%m/%d/%Y %H:%M'),
+    }
+
+
+def _apply_rewatch(watched, request):
+    """Carry the Re-watch checkbox onto ``watched`` when the request sent it.
+
+    Rating and reviewing both create the entry via get_or_create, so a box
+    ticked before either of those would otherwise be lost. The key is only
+    honoured when present, so a caller that never sends it cannot clear a
+    flag the member set elsewhere.
+    """
+    if 'rewatch' in request.POST:
+        watched.rewatch = bool(request.POST.get('rewatch'))
 
 
 @login_required
@@ -346,7 +374,7 @@ def update_rewatch(request, movie_id):
     return JsonResponse({
         'success': True,
         'message': 'Re-watch saved',
-        'rewatch': watched.rewatch,
+        **_watched_facts(watched),
     })
 
 
@@ -374,12 +402,14 @@ def submit_review(request, movie_id):
         defaults={'watched_date': timezone.now()}
     )
     watched.review = escape(review_text)
+    _apply_rewatch(watched, request)
     watched.save()
 
     return JsonResponse({
         'success': True,
         'message': 'Review saved',
-        'review': watched.review
+        'review': watched.review,
+        **_watched_facts(watched),
     })
 
 
