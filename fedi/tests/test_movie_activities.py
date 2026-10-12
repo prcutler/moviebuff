@@ -56,8 +56,22 @@ class MovieActivityTests(TestCase):
         watched.save()
         activity = FediActivity.objects.order_by("-id").first()
         obj = activity.payload["object"]
-        self.assertIn("rated", obj["content"])
+        self.assertIn("I just watched and rated The Film", obj["content"])
         self.assertIn("4.0", obj["content"])
+
+    def test_rewatch_rating_uses_rewatched_text(self):
+        watched = Watched.objects.create(
+            user=self.user,
+            movie=self.movie,
+            watched_date=timezone.now(),
+        )
+        FediActivity.objects.all().delete()
+        watched.rewatch_count += 1
+        watched.rating = 4.0
+        watched.save()
+        activity = FediActivity.objects.order_by("-id").first()
+        obj = activity.payload["object"]
+        self.assertIn("I just re-watched and rated The Film", obj["content"])
 
     def test_review_created_creates_activity(self):
         watched = Watched.objects.create(

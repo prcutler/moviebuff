@@ -101,7 +101,8 @@ def watched_events(sender, instance, created, **kwargs):
 
     # rating updated
     if instance.rating is not None and instance.rating != getattr(instance, "_prev_rating", None):
-        content = f"rated {movie.title} ⭐ {instance.rating}/5"
+        verb = "re-watched" if instance.rewatch_count > 1 else "watched"
+        content = f"I just {verb} and rated {movie.title} ⭐ {instance.rating}/5"
         _create_note(instance.user, content, url=url, attachment_url=movie.tmdb_poster_path or None)
     # review created
     if instance.review and instance.review != getattr(instance, "_prev_review", ""):
