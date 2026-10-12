@@ -30,14 +30,17 @@ def store_previous_watched(sender, instance, **kwargs):
     if not instance.pk:
         instance._prev_rating = None
         instance._prev_review = ""
+        instance._prev_rewatch = False
     else:
         try:
             prev = Watched.objects.get(pk=instance.pk)
             instance._prev_rating = prev.rating
             instance._prev_review = prev.review
+            instance._prev_rewatch = prev.rewatch
         except Watched.DoesNotExist:
             instance._prev_rating = None
             instance._prev_review = ""
+            instance._prev_rewatch = False
 
 
 @receiver(post_save, sender=Watched)
@@ -54,14 +57,18 @@ def watched_events(sender, instance, created, **kwargs):
         changed.add("rating")
     if instance.review != getattr(instance, "_prev_review", ""):
         changed.add("review")
+    # Not a part of its own: it only rewords a rating that is still held.
+    if instance.rewatch != getattr(instance, "_prev_rewatch", False):
+        changed.add("rewatch")
     if not changed:
         return
 
     movie = instance.movie
     url = f"{settings.ACTIVITYPUB_DOMAIN.rstrip('/')}/movies/details/{movie.id}"
+    verb = "re-watched" if instance.rewatch else "watched"
     parts = {
         "rating": (
-            f"rated {movie.title} ⭐ {instance.rating}/5"
+            f"I just {verb} and rated {movie.title} ⭐ {instance.rating}/5"
             if instance.rating is not None
             else ""
         ),

@@ -448,7 +448,8 @@ def share_to_fediverse(request, movie_id):
         return JsonResponse({'success': False, 'message': 'Rate the movie before sharing'}, status=400)
 
     stars = '★' * int(watched.rating) + '☆' * (5 - int(watched.rating))
-    content = f'I just watched {escape(movie.title)} and gave it {stars}'
+    verb = 're-watched' if watched.rewatch else 'watched'
+    content = f'I just {verb} and rated {escape(movie.title)} {stars}'
 
     from fedi.models import FediActivity, FediDelivery, FediFollower
     from fedi.vocab import NOTE_CONTEXT, build_interaction_policy

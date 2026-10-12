@@ -45,10 +45,27 @@ class TvFederationTests(TestCase):
         shelf.save()
 
         note = self._latest_note()
-        self.assertIn("rated", note["content"])
-        self.assertIn("Severance", note["content"])
+        self.assertIn("I just watched and rated Severance", note["content"])
         self.assertEqual(note["url"], "https://example.com/tv/details/{}/".format(self.show.id))
         self.assertEqual(note["attachment"][0]["url"], "https://img.example/sev.jpg")
+
+    def test_rewatch_rating_says_re_watched(self):
+        shelf = TvShelf.objects.create(
+            user=self.user, show=self.show, state=TvShelf.WATCHED, rewatch=True
+        )
+        shelf.rating = 5.0
+        shelf.save()
+
+        note = self._latest_note()
+        self.assertIn("I just re-watched and rated Severance", note["content"])
+
+    def test_rewatch_alone_does_not_post(self):
+        shelf = TvShelf.objects.create(
+            user=self.user, show=self.show, state=TvShelf.WATCHING
+        )
+        shelf.rewatch = True
+        shelf.save()
+        self.assertEqual(FediActivity.objects.count(), 0)
 
     def test_season_rating_names_the_season(self):
         shelf = TvShelf.objects.create(

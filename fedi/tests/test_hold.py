@@ -80,6 +80,35 @@ class HoldWindowTests(TestCase):
         self.assertIn("4.0/5", content)
         self.assertNotIn("3.0/5", content)
 
+    def test_first_watch_says_watched(self):
+        self._rate(3.0)
+        self.assertIn("I just watched and rated The Martian", self._only_note())
+
+    def test_rewatch_says_re_watched(self):
+        Watched.objects.create(
+            user=self.user,
+            movie=self.movie,
+            watched_date=timezone.now(),
+            rating=3.0,
+            rewatch=True,
+        )
+        self.assertIn("I just re-watched and rated The Martian", self._only_note())
+
+    def test_rewatch_ticked_inside_the_window_rewords_the_post(self):
+        watched = self._rate(3.0)
+        watched.rewatch = True
+        watched.save()
+
+        self.assertIn("I just re-watched and rated The Martian", self._only_note())
+
+    def test_rewatch_ticked_after_the_window_does_not_post(self):
+        watched = self._rate(3.0)
+        self._expire_holds()
+        watched.rewatch = True
+        watched.save()
+
+        self.assertIn("I just watched and rated The Martian", self._only_note())
+
     def test_review_after_the_window_is_its_own_post(self):
         watched = self._rate(3.0)
         self._expire_holds()
